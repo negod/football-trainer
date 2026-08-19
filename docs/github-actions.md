@@ -15,6 +15,13 @@ On pull requests and pushes to the main branch:
 The ruleset for `main` should require both jobs to pass and every review
 thread to be resolved. It should not require manual approvals.
 
+Both jobs are gated on `github.event.repository.is_template == false`, so CI
+does not run against this template repository itself (it is marked as a
+GitHub template repository, and its placeholders and dependency versions are
+only meant to be exercised after a real project is copied from it). A repo
+created from the template is not itself flagged as a template, so CI runs
+normally there.
+
 ## Copilot review and automatic merge
 
 GitHub's ruleset (`Automatic Copilot code review`, see "GitHub setup" in the
