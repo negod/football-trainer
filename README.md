@@ -93,7 +93,7 @@ npm run build:frontend
 |-- PROMPT-INIT.md                 # paste-in prompt to kick off a new project
 |-- .github/
 |   |-- ISSUE_TEMPLATE/            # Epic, Feature, Task, Bug forms
-|   |-- workflows/                 # ci.yml, auto-merge.yml, copilot-review-response.yml
+|   |-- workflows/                 # ci.yml, auto-merge.yml
 |   `-- copilot-instructions.md
 |-- backend/
 |   |-- src/main/java/__JAVA_PACKAGE_PATH__/
@@ -152,12 +152,7 @@ and ChatGPT (or two Claude sessions) can work it in parallel from day one:
    `docs/work-items.md`'s review gate relies on. Do not require a manual
    approving review; Copilot never issues one.
 
-4. **Secrets (optional).** If you keep `copilot-review-response.yml`, add
-   `ANTHROPIC_API_KEY` under Settings → Secrets and variables → Actions.
-   Otherwise delete that workflow — `ci.yml` and `auto-merge.yml` work on
-   their own.
-
-5. **Replace placeholders.** `__OWNER__/__REPO__` appears in
+4. **Replace placeholders.** `__OWNER__/__REPO__` appears in
    `.github/ISSUE_TEMPLATE/config.yml` and the command above; the bootstrap
    script in step 1 of "First Setup" does not touch these — update them by
    hand once the repository has a real name and owner.

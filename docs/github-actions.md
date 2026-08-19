@@ -41,33 +41,6 @@ worktree.
 The workflow only uses the repository's short-lived `GITHUB_TOKEN`; no
 personal token or AI API key is needed.
 
-## Automatic response to Copilot review
-
-`copilot-review-response.yml` triggers on `pull_request_review` (type
-`submitted`) and, if the reviewer is `copilot-pull-request-reviewer[bot]`,
-the PR is not draft, and it carries the label `agent: claude` or
-`agent: codex`, runs `anthropics/claude-code-action` headless on the PR's own
-branch. It reads unresolved review threads, addresses them or replies with a
-rationale and resolves the thread, runs backend/frontend verification for
-whatever it touches, and pushes a new commit to the same branch — without a
-human needing to start an interactive session to do it. This does not
-replace the review gate in `docs/work-items.md` ("Review gate before a new
-task"); that still applies as a fallback and as a check that a Copilot
-review actually arrived.
-
-A new push triggers GitHub's ruleset for a fresh Copilot review, which can
-trigger the workflow again. That's intentional — the same iteration a human
-would do — and it stops itself as soon as no new unresolved finding remains,
-since the step then neither commits nor pushes. As a guard against a loop
-that doesn't stop itself, the workflow counts `claude[bot]` commits on the
-PR's branch and fails after five, so a human has to look at the rest
-manually.
-
-The workflow requires the secret `ANTHROPIC_API_KEY` in the repository's
-Actions secrets. No agent should set or manage the key's actual value — the
-repository owner adds it manually under Settings → Secrets and variables →
-Actions.
-
 ## Future release flow
 
 Once a production target is chosen, merging to `main` should produce
