@@ -1,0 +1,49 @@
+name: Task
+description: Bounded technical, documentation or operational work.
+title: "[Task] "
+labels: ["type: task"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What should be different once this is done?
+    validations:
+      required: true
+  - type: input
+    id: parent
+    attributes:
+      label: Related epic or feature
+      description: Link, issue number, or "Standalone".
+      placeholder: "#123"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and boundaries
+      description: What should be done, and what should explicitly not be done?
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Technical notes
+      description: Relevant files, architecture requirements, dependencies or a proposed approach.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Done when
+      placeholder: |
+        - [ ] The change is implemented within the stated scope
+        - [ ] Relevant tests pass
+        - [ ] Affected documentation is updated
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Exact tests, commands or manual checks.
+    validations:
+      required: true

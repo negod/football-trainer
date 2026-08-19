@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/__DB_NAME__
+    username: __DB_NAME__
+    password: __DB_NAME__
+
+app:
+  auth:
+    token-secret: dev-only-change-me
+

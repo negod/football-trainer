@@ -1,0 +1,66 @@
+name: Epic
+description: Collect a larger product goal that will be broken down into features and tasks.
+title: "[Epic] "
+labels: ["type: epic"]
+body:
+  - type: markdown
+    attributes:
+      value: An epic describes an outcome, not a finished implementation. Break it into linked features and tasks before development.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What change should the user or business notice?
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and audience
+      description: Who has the problem, what is it, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Describe what's included at a high level.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Out of scope
+      description: Make the boundaries explicit.
+  - type: textarea
+    id: success
+    attributes:
+      label: Measurable result
+      description: How do we know the outcome was achieved?
+    validations:
+      required: true
+  - type: textarea
+    id: breakdown
+    attributes:
+      label: Features and tasks
+      description: List or link planned work items. Use "- [ ] #123" once issues exist.
+      placeholder: |
+        - [ ] Feature: Create item
+        - [ ] Feature: Track item status
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies, risks and security
+      description: External dependencies, migrations, private data, authorization and other risks.
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      placeholder: |
+        - [ ] All included features are accepted
+        - [ ] Documentation and operational requirements are updated
+        - [ ] Known follow-up work is registered
+    validations:
+      required: true

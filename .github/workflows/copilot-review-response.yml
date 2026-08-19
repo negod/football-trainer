@@ -1,0 +1,99 @@
+name: Copilot review auto-response
+
+# Reacts to copilot-pull-request-reviewer[bot] reviews on agent-owned PRs so
+# findings get addressed without a human starting a session to do it. See
+# docs/github-actions.md and docs/work-items.md ("Review gate before a new
+# task") for the manual fallback this complements.
+#
+# Requires the ANTHROPIC_API_KEY secret (Settings -> Secrets and variables ->
+# Actions). Remove this workflow if you don't want an automated agent pushing
+# commits in response to review comments.
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: copilot-review-response-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  respond:
+    if: >-
+      github.event.review.user.login == 'copilot-pull-request-reviewer[bot]' &&
+      github.event.pull_request.draft == false &&
+      (contains(github.event.pull_request.labels.*.name, 'agent: codex') ||
+       contains(github.event.pull_request.labels.*.name, 'agent: claude'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check automated-response budget
+        id: budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          count=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" \
+            --jq '[.[] | select(.commit.author.name == "claude[bot]")] | length')
+          echo "claude_bot_commits=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -ge 5 ]; then
+            echo "Already pushed $count automated fix commits on this PR; stopping to avoid a runaway loop. A human needs to look at the remaining review comments." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Address Copilot review with Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--max-turns 40"
+          prompt: |
+            A Copilot code review was just submitted on PR #${{ github.event.pull_request.number }}
+            in ${{ github.repository }} (branch ${{ github.event.pull_request.head.ref }}).
+
+            Follow docs/ai-instructions.md and the "Review gate before a new task"
+            section of docs/work-items.md as your process contract. Concretely:
+
+            1. Read every review thread left by copilot-pull-request-reviewer[bot] on
+               this PR, including ones from earlier reviews that are still unresolved.
+            2. For each unresolved thread: either implement the fix it asks for, or
+               reply with a short rationale for why no change is needed - then resolve
+               the thread. Do not leave a thread untouched.
+            3. Stay strictly within the scope of what the comments raise. Do not expand
+               scope, refactor unrelated code, or take on new work - if you notice an
+               unrelated issue, leave a comment instead of fixing it.
+            4. Run the project's existing verification for whatever you touched
+               (`mvn --batch-mode --no-transfer-progress verify` in backend/ for backend
+               changes, `npm run lint`, `npm test`, `npm run build` in frontend/ for
+               frontend changes) before committing.
+            5. If you make changes, commit them with a message referencing the PR's
+               issue number (see the branch name / existing commits for the number) and
+               push to this same branch. Do not open a new PR or new branch.
+            6. If every existing thread is already resolved and there is nothing new to
+               do, make no commit and no push - exit without changes rather than
+               force a no-op commit.
+            7. Never touch secrets, credentials, or CI/workflow permissions as part of
+               addressing a review comment.

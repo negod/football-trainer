@@ -1,0 +1,15 @@
+{
+  "name": "__PROJECT_SLUG__",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev:db": "docker compose up -d postgres",
+    "dev:backend": "cd backend && mvn spring-boot:run",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test:backend": "cd backend && mvn test",
+    "test:frontend": "cd frontend && npm test",
+    "build:backend": "cd backend && mvn clean package",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}
+

@@ -1,0 +1,74 @@
+name: Feature
+description: Describe a coherent unit of user value that can be built and verified.
+title: "[Feature] "
+labels: ["type: feature"]
+body:
+  - type: textarea
+    id: user_value
+    attributes:
+      label: User value
+      description: Consider "As a ... I want ... so that ...".
+    validations:
+      required: true
+  - type: input
+    id: parent
+    attributes:
+      label: Parent epic
+      description: Link or issue number. Write "None" if the feature is standalone.
+      placeholder: "#123"
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules and security boundary
+      description: Domain rules, validation, ownership, roles and private data.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write observable criteria, ideally Given/When/Then.
+      placeholder: |
+        - [ ] Given an authenticated owner, when valid data is saved, then the owner can read it back.
+        - [ ] Given a user outside the ownership boundary, when the resource is requested, then access is denied.
+    validations:
+      required: true
+  - type: textarea
+    id: ux
+    attributes:
+      label: UX and accessibility
+      description: Loading, empty, error, success, mobile at 320px, keyboard and touch targets.
+  - type: textarea
+    id: contracts
+    attributes:
+      label: API, data and migration
+      description: Expected contracts, data model, backward compatibility and migration needs.
+  - type: textarea
+    id: verification
+    attributes:
+      label: Test and verification
+      placeholder: |
+        - [ ] Domain and use-case tests
+        - [ ] Validation, not-found and denied-access tests
+        - [ ] Frontend loading, empty, error and success states
+        - [ ] Production builds
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: Documentation
+      description: Which README or docs files need updating?
+  - type: checkboxes
+    id: ready
+    attributes:
+      label: Definition of Ready
+      options:
+        - label: The user value and scope are clear.
+          required: true
+        - label: The acceptance criteria are verifiable.
+          required: true
+        - label: Security and data boundaries are identified.
+          required: true

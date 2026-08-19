@@ -1,0 +1,70 @@
+name: Bug
+description: Report a reproducible defect or regression.
+title: "[Bug] "
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Actual behavior
+      description: What happens, including any visible error message?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as ...
+        2. Open ...
+        3. Click ...
+        4. See the error ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Branch/commit, browser, device, OS and relevant configuration.
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Blocking – the system or a critical flow can't be used
+        - High – a central flow has no reasonable workaround
+        - Normal – limited defect or a workaround exists
+        - Low – cosmetic or minor annoyance
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs without sensitive data, screenshots, video, stack trace or related issues.
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and private data
+      description: Could the bug expose data, bypass an ownership boundary, or affect authentication? Do not put secrets or private content here.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Fix is done when
+      placeholder: |
+        - [ ] The bug is reproduced by a test before the fix
+        - [ ] The test passes after the fix
+        - [ ] Nearby flows have been verified
+    validations:
+      required: true
