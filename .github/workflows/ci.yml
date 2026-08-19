@@ -15,6 +15,7 @@ concurrency:
 jobs:
   backend:
     name: Backend
+    if: github.event.repository.is_template == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -30,6 +31,7 @@ jobs:
 
   frontend:
     name: Frontend
+    if: github.event.repository.is_template == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

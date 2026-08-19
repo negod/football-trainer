@@ -90,6 +90,7 @@ npm run build:frontend
 .
 |-- AGENTS.md                      # Codex/ChatGPT entry point
 |-- CLAUDE.md                      # Claude entry point
+|-- PROMPT-INIT.md                 # paste-in prompt to kick off a new project
 |-- .github/
 |   |-- ISSUE_TEMPLATE/            # Epic, Feature, Task, Bug forms
 |   |-- workflows/                 # ci.yml, auto-merge.yml, copilot-review-response.yml
@@ -163,27 +164,9 @@ and ChatGPT (or two Claude sessions) can work it in parallel from day one:
 
 ## AI Bootstrap Prompt
 
-Use this prompt in the new repository after copying the template and doing
-the GitHub setup above:
-
-```text
-Read AGENTS.md (or CLAUDE.md) and docs/ai-instructions.md first, then
-docs/work-items.md. Confirm the GitHub Project's Status field and the
-type/agent labels described there already exist; if not, tell me instead of
-guessing.
-
-Replace all __PROJECT_NAME__ / __PROJECT_SLUG__ / __JAVA_PACKAGE__ /
-__JAVA_PACKAGE_PATH__ / __DB_NAME__ / __OWNER__ / __REPO__ placeholders
-(scripts/bootstrap-template.sh can do most of it), then run the backend and
-frontend builds to confirm the template compiles clean.
-
-After that, create an Epic issue for <describe your product goal>, break it
-into Feature and Task issues per docs/work-items.md, and implement the
-first vertical-slice Feature end-to-end using TDD, each Task in its own
-worktree and branch, updating docs in the same change as the code.
-```
-
-Give the same prompt (with the same goal description) to a second assistant
-in a separate session/worktree to start working in parallel — `work-items.md`
-is what keeps the two from claiming the same issue or touching the same
-files.
+See [`PROMPT-INIT.md`](PROMPT-INIT.md) for the prompt to paste into a new
+Claude or ChatGPT (Codex) session after copying the template and doing the
+GitHub setup above. It has the assistant ask you for the project goal,
+placeholder values, local path, and GitHub owner/repo before it touches
+anything — rather than guessing them — and it's designed to be handed to a
+second assistant afterwards to start working in parallel.
