@@ -1,4 +1,4 @@
-package _template.infrastructure.web;
+package se.backede.coachhub.infrastructure.web;
 
 import java.time.Instant;
 import java.util.List;

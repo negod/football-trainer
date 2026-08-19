@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/__DB_NAME__
-    username: __DB_NAME__
-    password: __DB_NAME__
+    url: jdbc:postgresql://localhost:5432/coach-hub
+    username: coach-hub
+    password: coach-hub
 
 app:
   auth:

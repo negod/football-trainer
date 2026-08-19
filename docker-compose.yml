@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: __PROJECT_SLUG__-postgres
+    container_name: coach-hub-postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: __DB_NAME__
-      POSTGRES_USER: __DB_NAME__
-      POSTGRES_PASSWORD: __DB_NAME__
+      POSTGRES_DB: coach-hub
+      POSTGRES_USER: coach-hub
+      POSTGRES_PASSWORD: coach-hub
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U __DB_NAME__ -d __DB_NAME__"]
+      test: ["CMD-SHELL", "pg_isready -U coach-hub -d coach-hub"]
       interval: 5s
       timeout: 5s
       retries: 10

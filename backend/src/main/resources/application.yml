@@ -1,6 +1,6 @@
 spring:
   application:
-    name: __PROJECT_SLUG__
+    name: coach-hub
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}

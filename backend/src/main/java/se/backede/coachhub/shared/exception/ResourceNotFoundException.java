@@ -1,4 +1,4 @@
-package _template.shared.exception;
+package se.backede.coachhub.shared.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
 

@@ -1,7 +1,7 @@
-package _template.infrastructure.web;
+package se.backede.coachhub.infrastructure.web;
 
-import _template.shared.exception.DomainValidationException;
-import _template.shared.exception.ResourceNotFoundException;
+import se.backede.coachhub.shared.exception.DomainValidationException;
+import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

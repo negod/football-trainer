@@ -6,7 +6,7 @@ export function App() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-4 text-lg font-semibold">
           <ShieldCheck aria-hidden="true" className="h-5 w-5 text-teal-700" />
-          __PROJECT_NAME__
+          Coach Hub
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">

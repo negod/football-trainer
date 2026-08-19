@@ -25,11 +25,11 @@ engineering rules every assistant reads first.
 1. Rename project placeholders:
 
 ```text
-__PROJECT_NAME__        # display name, for example Customer Portal
-__PROJECT_SLUG__        # lowercase slug, for example customer-portal
-__JAVA_PACKAGE__        # Java package, for example se.backede.customerportal
-__JAVA_PACKAGE_PATH__   # Java path, for example se/backede/customerportal
-__DB_NAME__             # database name, for example customer-portal
+Coach Hub        # display name, for example Customer Portal
+coach-hub        # lowercase slug, for example customer-portal
+se.backede.coachhub        # Java package, for example se.backede.customerportal
+se/backede/coachhub   # Java path, for example se/backede/customerportal
+coach-hub             # database name, for example customer-portal
 ```
 
 Or run the bootstrap helper from the copied repository root:
@@ -96,7 +96,7 @@ npm run build:frontend
 |   |-- workflows/                 # ci.yml, auto-merge.yml
 |   `-- copilot-instructions.md
 |-- backend/
-|   |-- src/main/java/__JAVA_PACKAGE_PATH__/
+|   |-- src/main/java/se/backede/coachhub/
 |   |   |-- domain/
 |   |   |-- application/
 |   |   |-- infrastructure/
@@ -133,7 +133,7 @@ and ChatGPT (or two Claude sessions) can work it in parallel from day one:
    for l in "type: epic" "type: feature" "type: task" "type: bug" \
             "agent: claude" "agent: codex" \
             "status: blocked" "status: waiting"; do
-     gh label create "$l" --repo __OWNER__/__REPO__ 2>/dev/null || true
+     gh label create "$l" --repo negod/football-trainer 2>/dev/null || true
    done
    ```
 
