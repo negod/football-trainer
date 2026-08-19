@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Football Trainer Mission Control</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f1420;
+    --panel: #161d2e;
+    --panel-border: #262f45;
+    --text: #e6e9f2;
+    --muted: #8b93a8;
+    --accent: #4f8cff;
+    --green: #37c98e;
+    --red: #e5566a;
+    --amber: #e6b34f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin: 0 0 24px; font-size: 0.9rem; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 14px;
+    transition: border-color 0.15s;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger:hover:not(:disabled) { border-color: var(--red); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .card-head h2 { font-size: 1.05rem; margin: 0; text-transform: capitalize; }
+  .badge { font-size: 0.75rem; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .badge.running, .badge.healthy { background: rgba(55,201,142,0.18); color: var(--green); }
+  .badge.stopped { background: rgba(139,147,168,0.18); color: var(--muted); }
+  .badge.starting { background: rgba(230,179,79,0.18); color: var(--amber); }
+  .meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; }
+  .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .card-actions button { padding: 6px 10px; font-size: 0.85rem; }
+  section { margin-bottom: 24px; }
+  section > h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  pre {
+    background: #0a0e17;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 340px;
+    overflow: auto;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .logs-picker { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  select {
+    font: inherit;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    max-width: 360px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <h1>Football Trainer Mission Control</h1>
+  <p class="subtitle">Local dev orchestration - Postgres, backend, frontend, E2E</p>
+
+  <div class="toolbar">
+    <button class="primary" data-action="start" data-target="all">Start all</button>
+    <button data-action="restart" data-target="all">Restart all</button>
+    <button class="danger" data-action="stop" data-target="all">Stop all</button>
+    <button data-action="open" data-target="frontend">Open app</button>
+  </div>
+
+  <div class="grid" id="cards"></div>
+
+  <section>
+    <h2>Logs</h2>
+    <div class="logs-picker">
+      <select id="log-service">
+        <option value="db">db</option>
+        <option value="backend" selected>backend</option>
+        <option value="frontend">frontend</option>
+      </select>
+      <button id="log-refresh">Refresh</button>
+      <label style="font-size:0.85rem;color:var(--muted)">
+        <input type="checkbox" id="log-auto" checked /> auto-refresh
+      </label>
+    </div>
+    <pre id="log-output">(select a service)</pre>
+  </section>
+
+  <section>
+    <h2>End-to-end tests</h2>
+    <div class="toolbar">
+      <button class="primary" id="run-e2e">Run E2E tests</button>
+      <span id="e2e-result" style="align-self:center;font-size:0.85rem;color:var(--muted)"></span>
+    </div>
+    <pre id="e2e-output">(not run yet)</pre>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const SERVICES = ['db', 'backend', 'frontend'];
+const cardsEl = document.getElementById('cards');
+const toastEl = document.getElementById('toast');
+
+function badgeClass(state) {
+  if (state === 'running' || state === 'healthy') return 'running';
+  if (state === 'stopped') return 'stopped';
+  return 'starting';
+}
+
+function renderCards(services) {
+  cardsEl.innerHTML = services.map((s) => `
+    <div class="card">
+      <div class="card-head">
+        <h2>${s.service}</h2>
+        <span class="badge ${badgeClass(s.state)}">${s.state}</span>
+      </div>
+      <div class="meta">port ${s.port}${s.pid ? ' &middot; pid ' + s.pid : ''}</div>
+      <div class="card-actions">
+        <button data-action="start" data-target="${s.service}">Start</button>
+        <button data-action="restart" data-target="${s.service}">Restart</button>
+        <button class="danger" data-action="stop" data-target="${s.service}">Stop</button>
+        ${s.service !== 'db' ? `<button data-action="open" data-target="${s.service}">Open</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function showToast(message) {
+  toastEl.textContent = message;
+  toastEl.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toastEl.classList.remove('show'), 4000);
+}
+
+async function refreshStatus() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    renderCards(data.services);
+    updateE2eButton(data.e2e);
+  } catch {
+    // dashboard server itself is always up while this page is open; ignore transient errors
+  }
+}
+
+async function runAction(action, target, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    if (action === 'open') {
+      await fetch('/api/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target }) });
+      showToast(`Opened ${target}`);
+      return;
+    }
+    const res = await fetch(`/api/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target }),
+    });
+    const data = await res.json();
+    showToast((data.messages || []).join(' | ') || `${action} ${target} done`);
+  } catch (err) {
+    showToast(`${action} ${target} failed: ${err}`);
+  } finally {
+    if (btn) btn.disabled = false;
+    refreshStatus();
+  }
+}
+
+document.body.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  runAction(btn.dataset.action, btn.dataset.target, btn);
+});
+
+// Logs panel
+const logService = document.getElementById('log-service');
+const logOutput = document.getElementById('log-output');
+const logAuto = document.getElementById('log-auto');
+document.getElementById('log-refresh').addEventListener('click', loadLog);
+logService.addEventListener('change', loadLog);
+
+async function loadLog() {
+  const service = logService.value;
+  try {
+    const res = await fetch(`/api/logs/${service}`);
+    const data = await res.json();
+    const wasAtBottom = logOutput.scrollTop + logOutput.clientHeight >= logOutput.scrollHeight - 20;
+    logOutput.textContent = data.content;
+    if (wasAtBottom) logOutput.scrollTop = logOutput.scrollHeight;
+  } catch {
+    // ignore transient errors, next poll will retry
+  }
+}
+
+// E2E
+const runE2eBtn = document.getElementById('run-e2e');
+const e2eOutput = document.getElementById('e2e-output');
+const e2eResult = document.getElementById('e2e-result');
+let e2ePolling = false;
+
+runE2eBtn.addEventListener('click', async () => {
+  runE2eBtn.disabled = true;
+  e2eOutput.textContent = '';
+  e2eResult.textContent = 'running...';
+  await fetch('/api/e2e', { method: 'POST' });
+  pollE2e();
+});
+
+function updateE2eButton(e2e) {
+  if (e2e.running) {
+    runE2eBtn.disabled = true;
+    e2eResult.textContent = 'running...';
+    if (!e2ePolling) pollE2e();
+  } else if (!e2ePolling) {
+    runE2eBtn.disabled = false;
+  }
+}
+
+async function pollE2e() {
+  e2ePolling = true;
+  const res = await fetch('/api/e2e');
+  const data = await res.json();
+  e2eOutput.textContent = data.output;
+  e2eOutput.scrollTop = e2eOutput.scrollHeight;
+  if (data.running) {
+    setTimeout(pollE2e, 1000);
+    return;
+  }
+  e2ePolling = false;
+  runE2eBtn.disabled = false;
+  e2eResult.textContent = data.exitCode === 0 ? 'passed' : data.exitCode === null ? '' : `failed (exit ${data.exitCode})`;
+}
+
+refreshStatus();
+loadLog();
+setInterval(refreshStatus, 2000);
+setInterval(() => { if (logAuto.checked) loadLog(); }, 2000);
+</script>
+</body>
+</html>

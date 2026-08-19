@@ -77,7 +77,11 @@ done < <(find . -type f \
   -not -path './.git/*' \
   -not -path './frontend/node_modules/*' \
   -not -path './frontend/dist/*' \
-  -not -path './backend/target/*')
+  -not -path './frontend/playwright-report/*' \
+  -not -path './frontend/test-results/*' \
+  -not -path './backend/target/*' \
+  -not -path './mission-control/.state/*' \
+  -not -path './mission-control/node_modules/*')
 
 echo "Template bootstrapped for $project_name."
 echo "Next: npm install --prefix frontend && npm run build:backend && npm run build:frontend"

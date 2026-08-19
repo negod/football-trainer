@@ -35,3 +35,6 @@ pnpm-debug.log*
 /frontend/test-results/
 /frontend/e2e/.auth/
 
+# Mission control runtime state
+/mission-control/.state/
+

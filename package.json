@@ -8,8 +8,17 @@
     "dev:frontend": "cd frontend && npm run dev",
     "test:backend": "cd backend && mvn test",
     "test:frontend": "cd frontend && npm test",
+    "test:e2e": "cd frontend && npm run test:e2e",
     "build:backend": "cd backend && mvn clean package",
-    "build:frontend": "cd frontend && npm run build"
+    "build:frontend": "cd frontend && npm run build",
+    "mc": "node mission-control/src/cli.mjs",
+    "mc:ui": "node mission-control/src/cli.mjs ui",
+    "mc:start": "node mission-control/src/cli.mjs start",
+    "mc:stop": "node mission-control/src/cli.mjs stop",
+    "mc:restart": "node mission-control/src/cli.mjs restart",
+    "mc:status": "node mission-control/src/cli.mjs status",
+    "mc:e2e": "node mission-control/src/cli.mjs e2e",
+    "mc:open": "node mission-control/src/cli.mjs open"
   }
 }
 

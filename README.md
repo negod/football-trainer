@@ -10,7 +10,10 @@ The stack is:
 - React 18, Vite, TypeScript
 - Tailwind CSS
 - Vitest and React Testing Library
-- Playwright-ready structure
+- Playwright for E2E tests
+- [`mission-control/`](mission-control/README.md): a dashboard (and CLI) to
+  start, stop and restart Postgres/backend/frontend, run the E2E suite, and
+  open the app in your browser
 
 It also ships the process that lets **Claude and ChatGPT (Codex) work the
 same repository in parallel** without stepping on each other: an
@@ -54,22 +57,32 @@ rg '__(PROJECT|JAVA|DB)_' --glob '!README.md'
 npm install --prefix frontend
 ```
 
-4. Start PostgreSQL:
+4. Open the mission control dashboard - buttons to start/stop/restart
+   Postgres, the backend and the frontend, view logs, and run E2E tests:
+
+```bash
+npm run mc:ui
+```
+
+   Or start everything from the terminal and open the app in your browser
+   once it's ready:
+
+```bash
+npm run mc:start -- --open
+```
+
+   Or start each service individually:
 
 ```bash
 npm run dev:db
-```
-
-5. Start backend:
-
-```bash
 npm run dev:backend
+npm run dev:frontend
 ```
 
-6. Start frontend:
+5. (Optional, for E2E tests) Install Playwright's browser:
 
 ```bash
-npm run dev:frontend
+npx --prefix frontend playwright install --with-deps chromium
 ```
 
 ## Commands
@@ -80,8 +93,19 @@ npm run dev:backend
 npm run dev:frontend
 npm run test:backend
 npm run test:frontend
+npm run test:e2e
 npm run build:backend
 npm run build:frontend
+
+# Dev orchestration (see mission-control/README.md)
+npm run mc:ui
+npm run mc:start [-- db|backend|frontend] [-- --open]
+npm run mc:stop [-- db|backend|frontend]
+npm run mc:restart [-- db|backend|frontend]
+npm run mc:status
+npm run mc -- logs backend -f
+npm run mc:e2e
+npm run mc:open
 ```
 
 ## Repository Layout
@@ -113,11 +137,14 @@ npm run build:frontend
 |   |-- deployment.md
 |   `-- testing.md
 |-- frontend/
+|   |-- e2e/                        # Playwright E2E specs
+|   |-- playwright.config.ts
 |   `-- src/
 |       |-- app/
 |       |-- pages/
 |       |-- features/
 |       `-- shared/
+|-- mission-control/                # dev orchestration dashboard + CLI (start/stop/restart/e2e)
 |-- docker-compose.yml
 `-- package.json
 ```
