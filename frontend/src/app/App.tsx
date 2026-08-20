@@ -1,4 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
+import { Route, Routes } from 'react-router-dom';
+
+import { TeamsPage } from '../pages/TeamsPage';
 
 export function App() {
   return (
@@ -10,12 +13,10 @@ export function App() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-2xl font-semibold">First Workflow</h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-700">
-          Replace this with the first useful screen for the application.
-        </p>
+        <Routes>
+          <Route path="/" element={<TeamsPage />} />
+        </Routes>
       </main>
     </div>
   );
 }
-

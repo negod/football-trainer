@@ -102,3 +102,15 @@ ownership boundary:
   change, since every use case already takes an explicit `CoachId` and
   enforces ownership with it.
 
+### Frontend (issue #34)
+
+- `frontend/src/features/teams/api/teamsApi.ts`: typed `listTeams` /
+  `createTeam` / `updateTeam` calling `/teams` through the shared
+  `apiRequest` client.
+- `frontend/src/features/teams/components`: `TeamForm` (create/edit, no
+  direct fetch calls) and `TeamList` (loading/empty/error handled by the
+  page, not the component).
+- `frontend/src/pages/TeamsPage.tsx`: the first route page — fetches the
+  list via `useAsync`, and switches `TeamForm` between create and edit mode.
+  `App.tsx`/`main.tsx` now wire up `react-router-dom` for the first time.
+
