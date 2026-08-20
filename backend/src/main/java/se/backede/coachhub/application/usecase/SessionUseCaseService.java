@@ -9,11 +9,14 @@ import org.springframework.stereotype.Service;
 
 import se.backede.coachhub.application.dto.GenerateSessionsRequest;
 import se.backede.coachhub.application.dto.SessionResponse;
+import se.backede.coachhub.application.dto.UpdateSessionRequest;
 import se.backede.coachhub.application.mapper.SessionMapper;
 import se.backede.coachhub.domain.model.CoachId;
 import se.backede.coachhub.domain.model.Period;
 import se.backede.coachhub.domain.model.PeriodId;
 import se.backede.coachhub.domain.model.Session;
+import se.backede.coachhub.domain.model.SessionId;
+import se.backede.coachhub.domain.model.SessionStatus;
 import se.backede.coachhub.domain.model.Team;
 import se.backede.coachhub.domain.model.TeamId;
 import se.backede.coachhub.domain.repository.PeriodRepositoryPort;
@@ -62,6 +65,34 @@ public class SessionUseCaseService {
                 .map(SessionMapper::toResponse)
                 .sorted((a, b) -> a.date().compareTo(b.date()))
                 .toList();
+    }
+
+    /**
+     * Skips/restores (via {@code status}) and/or reschedules (via
+     * {@code date}) a session; either field may be omitted to leave that
+     * aspect unchanged.
+     */
+    public SessionResponse update(CoachId requester, TeamId teamId, PeriodId periodId, SessionId sessionId, UpdateSessionRequest request) {
+        requireOwnedPeriod(requester, teamId, periodId);
+        Session session = requireOnPeriod(periodId, sessionId);
+
+        if (request.status() != null) {
+            session = request.status() == SessionStatus.SKIPPED ? session.skip() : session.restore();
+        }
+        if (request.date() != null) {
+            session = session.reschedule(request.date());
+        }
+
+        return SessionMapper.toResponse(sessionRepository.save(session));
+    }
+
+    private Session requireOnPeriod(PeriodId periodId, SessionId sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId.value()));
+        if (!session.belongsToPeriod(periodId)) {
+            throw new ResourceNotFoundException("Session not found: " + sessionId.value());
+        }
+        return session;
     }
 
     private Period requireOwnedPeriod(CoachId requester, TeamId teamId, PeriodId periodId) {

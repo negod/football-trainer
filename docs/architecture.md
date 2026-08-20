@@ -394,3 +394,48 @@ persistence and API in #42, frontend in #43.
   in order, generated again with the same weekdays and confirmed the count
   stayed at 9 (idempotency holding through the real UI, not just the
   backend tests), and checked the 320px layout. No console errors.
+
+## Session Management (domain)
+
+Feature #10 (epic #2) lets a coach skip, restore or reschedule an
+individual generated session. Issue #44 covers domain and use cases only.
+
+- `SessionStatus` gains `SKIPPED` — a pure enum addition, no schema impact
+  (the column is a plain `varchar`, same reasoning as `MatchFormat`).
+  `Session.skip()` / `Session.restore()` toggle between it and `SCHEDULED`;
+  `Session.reschedule(newDate)` moves the date without touching identity or
+  status. All three return a new `Session` (records are immutable) and are
+  covered directly in `SessionTest`.
+- **`source` (generated vs. ad-hoc) is deliberately deferred to #45,
+  not included here**, even though it's part of feature #10's acceptance
+  criteria ("add an ad-hoc session... marked as ad-hoc"). Reason: adding a
+  field to the `Session` record changes its constructor arity, which breaks
+  the already-shipped `JpaSessionRepositoryAdapter`/`SessionEntity` from
+  #42 — and with `ddl-auto=validate`, an entity field with no matching
+  column fails at context startup, so the Java change and the Liquibase
+  migration are inseparable in practice. Splitting `source` into #45 (which
+  already owns "extend Session with source" and the schema change in its
+  own scope) keeps #44 genuinely infra-free; skip/restore/reschedule don't
+  have this problem since `SKIPPED` is just a new value in an existing
+  `varchar` column.
+- `SessionRepositoryPort` gained `findById(SessionId)` — needed to load a
+  single session for mutation, unlike `generate`/`list` which only ever
+  worked with the full per-period collection. Implementing it required a
+  one-line addition to `JpaSessionRepositoryAdapter` (delegating to
+  `SpringDataSessionRepository`'s already-inherited `findById`, no new
+  Spring Data method or migration) — a mechanical consequence of extending
+  an existing port's contract, not new infrastructure work.
+- `SessionUseCaseService.update(requester, teamId, periodId, sessionId, UpdateSessionRequest)`:
+  a single method backing skip, restore *and* reschedule, matching feature
+  #10's own "PATCH /sessions/{id} for skip/reschedule" (one endpoint, added
+  in #45). `UpdateSessionRequest` has two independently-optional fields —
+  `status` (applies skip when `SKIPPED`, restore when `SCHEDULED`) and
+  `date` (reschedules) — either may be omitted to leave that aspect
+  unchanged. This is a partial-update DTO, unlike `Team`/`Player`/`Period`'s
+  `UpdateXRequest` (always a full-field replace), because skip/restore and
+  reschedule are genuinely independent operations sharing one endpoint
+  rather than one "edit everything" form.
+- Ownership resolves through `Period` → `Team` → coach (same chain as
+  `generate`/`list`); a session belonging to a *different* period than the
+  one in the path is reported as `ResourceNotFoundException`, same
+  cross-boundary pattern used everywhere else in this codebase.
