@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class SessionTest {
 
     @Test
-    void createsAScheduledSession() {
+    void createsAScheduledGeneratedSession() {
         PeriodId periodId = PeriodId.newId();
         LocalDate date = LocalDate.of(2026, 3, 3);
 
@@ -19,6 +19,18 @@ class SessionTest {
         assertThat(session.periodId()).isEqualTo(periodId);
         assertThat(session.date()).isEqualTo(date);
         assertThat(session.status()).isEqualTo(SessionStatus.SCHEDULED);
+        assertThat(session.source()).isEqualTo(SessionSource.GENERATED);
+    }
+
+    @Test
+    void createsAScheduledAdhocSession() {
+        PeriodId periodId = PeriodId.newId();
+        LocalDate date = LocalDate.of(2026, 3, 3);
+
+        Session session = Session.createAdhoc(periodId, date);
+
+        assertThat(session.status()).isEqualTo(SessionStatus.SCHEDULED);
+        assertThat(session.source()).isEqualTo(SessionSource.ADHOC);
     }
 
     @Test
@@ -68,5 +80,14 @@ class SessionTest {
         Session session = Session.create(PeriodId.newId(), LocalDate.of(2026, 3, 3));
 
         assertThatThrownBy(() -> session.reschedule(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void skipRestoreAndReschedulePreserveSource() {
+        Session adhoc = Session.createAdhoc(PeriodId.newId(), LocalDate.of(2026, 3, 3));
+
+        assertThat(adhoc.skip().source()).isEqualTo(SessionSource.ADHOC);
+        assertThat(adhoc.skip().restore().source()).isEqualTo(SessionSource.ADHOC);
+        assertThat(adhoc.reschedule(LocalDate.of(2026, 3, 10)).source()).isEqualTo(SessionSource.ADHOC);
     }
 }

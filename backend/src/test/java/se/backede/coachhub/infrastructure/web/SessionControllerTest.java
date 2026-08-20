@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +26,8 @@ import se.backede.coachhub.application.dto.SessionResponse;
 import se.backede.coachhub.application.usecase.SessionUseCaseService;
 import se.backede.coachhub.domain.model.CoachId;
 import se.backede.coachhub.domain.model.PeriodId;
+import se.backede.coachhub.domain.model.SessionId;
+import se.backede.coachhub.domain.model.SessionSource;
 import se.backede.coachhub.domain.model.SessionStatus;
 import se.backede.coachhub.domain.model.TeamId;
 import se.backede.coachhub.infrastructure.security.CurrentCoachResolver;
@@ -56,7 +59,7 @@ class SessionControllerTest {
 
     @Test
     void generatesSessions() throws Exception {
-        SessionResponse response = new SessionResponse(UUID.randomUUID(), periodId, LocalDate.of(2026, 1, 6), SessionStatus.SCHEDULED);
+        SessionResponse response = new SessionResponse(UUID.randomUUID(), periodId, LocalDate.of(2026, 1, 6), SessionStatus.SCHEDULED, SessionSource.GENERATED);
         when(sessionUseCaseService.generate(eq(coach), eq(new TeamId(teamId)), eq(new PeriodId(periodId)), any()))
                 .thenReturn(List.of(response));
 
@@ -103,7 +106,7 @@ class SessionControllerTest {
 
     @Test
     void listsSessions() throws Exception {
-        SessionResponse response = new SessionResponse(UUID.randomUUID(), periodId, LocalDate.of(2026, 1, 6), SessionStatus.SCHEDULED);
+        SessionResponse response = new SessionResponse(UUID.randomUUID(), periodId, LocalDate.of(2026, 1, 6), SessionStatus.SCHEDULED, SessionSource.GENERATED);
         when(sessionUseCaseService.list(coach, new TeamId(teamId), new PeriodId(periodId))).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/teams/{teamId}/periods/{periodId}/sessions", teamId, periodId))
@@ -117,6 +120,57 @@ class SessionControllerTest {
                 .thenThrow(new ResourceNotFoundException("Period not found: " + periodId));
 
         mockMvc.perform(get("/api/teams/{teamId}/periods/{periodId}/sessions", teamId, periodId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addsAnAdhocSession() throws Exception {
+        SessionResponse response = new SessionResponse(UUID.randomUUID(), periodId, LocalDate.of(2026, 1, 10), SessionStatus.SCHEDULED, SessionSource.ADHOC);
+        when(sessionUseCaseService.addAdhoc(eq(coach), eq(new TeamId(teamId)), eq(new PeriodId(periodId)), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/teams/{teamId}/periods/{periodId}/sessions", teamId, periodId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"date\":\"2026-01-10\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.source").value("ADHOC"));
+    }
+
+    @Test
+    void returns400WhenAddingAnAdhocSessionOnATakenDate() throws Exception {
+        when(sessionUseCaseService.addAdhoc(eq(coach), eq(new TeamId(teamId)), eq(new PeriodId(periodId)), any()))
+                .thenThrow(new DomainValidationException("A session already exists on 2026-01-10"));
+
+        mockMvc.perform(post("/api/teams/{teamId}/periods/{periodId}/sessions", teamId, periodId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"date\":\"2026-01-10\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatesASessionStatusAndDate() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        SessionResponse response = new SessionResponse(sessionId, periodId, LocalDate.of(2026, 1, 8), SessionStatus.SKIPPED, SessionSource.GENERATED);
+        when(sessionUseCaseService.update(eq(coach), eq(new TeamId(teamId)), eq(new PeriodId(periodId)), eq(new SessionId(sessionId)), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(patch("/api/teams/{teamId}/periods/{periodId}/sessions/{id}", teamId, periodId, sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"SKIPPED\",\"date\":\"2026-01-08\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SKIPPED"))
+                .andExpect(jsonPath("$.date").value("2026-01-08"));
+    }
+
+    @Test
+    void returns404WhenUpdatingAnUnknownSession() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(sessionUseCaseService.update(eq(coach), eq(new TeamId(teamId)), eq(new PeriodId(periodId)), eq(new SessionId(sessionId)), any()))
+                .thenThrow(new ResourceNotFoundException("Session not found: " + sessionId));
+
+        mockMvc.perform(patch("/api/teams/{teamId}/periods/{periodId}/sessions/{id}", teamId, periodId, sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"SKIPPED\"}"))
                 .andExpect(status().isNotFound());
     }
 }
