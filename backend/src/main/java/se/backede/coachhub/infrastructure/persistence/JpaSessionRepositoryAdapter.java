@@ -1,6 +1,7 @@
 package se.backede.coachhub.infrastructure.persistence;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,11 @@ public class JpaSessionRepositoryAdapter implements SessionRepositoryPort {
     public Session save(Session session) {
         SessionEntity saved = springDataSessionRepository.save(toEntity(session));
         return toDomain(saved);
+    }
+
+    @Override
+    public Optional<Session> findById(SessionId id) {
+        return springDataSessionRepository.findById(id.value()).map(JpaSessionRepositoryAdapter::toDomain);
     }
 
     @Override

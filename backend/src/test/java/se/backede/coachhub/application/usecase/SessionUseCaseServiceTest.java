@@ -22,12 +22,15 @@ import se.backede.coachhub.application.dto.GenerateSessionsRequest;
 import se.backede.coachhub.application.dto.PeriodResponse;
 import se.backede.coachhub.application.dto.SessionResponse;
 import se.backede.coachhub.application.dto.TeamResponse;
+import se.backede.coachhub.application.dto.UpdateSessionRequest;
 import se.backede.coachhub.domain.model.CoachId;
 import se.backede.coachhub.domain.model.GenderCategory;
 import se.backede.coachhub.domain.model.MatchFormat;
 import se.backede.coachhub.domain.model.Period;
 import se.backede.coachhub.domain.model.PeriodId;
 import se.backede.coachhub.domain.model.Session;
+import se.backede.coachhub.domain.model.SessionId;
+import se.backede.coachhub.domain.model.SessionStatus;
 import se.backede.coachhub.domain.model.Team;
 import se.backede.coachhub.domain.model.TeamId;
 import se.backede.coachhub.domain.repository.PeriodRepositoryPort;
@@ -141,6 +144,79 @@ class SessionUseCaseServiceTest {
                 .isInstanceOf(AccessDeniedException.class);
     }
 
+    @Test
+    void skipsASession() {
+        SessionId sessionId = generateOneSession();
+
+        SessionResponse updated = useCase.update(owner, ownedTeamId, ownedPeriodId, sessionId,
+                new UpdateSessionRequest(SessionStatus.SKIPPED, null));
+
+        assertThat(updated.status()).isEqualTo(SessionStatus.SKIPPED);
+    }
+
+    @Test
+    void restoresASkippedSession() {
+        SessionId sessionId = generateOneSession();
+        useCase.update(owner, ownedTeamId, ownedPeriodId, sessionId, new UpdateSessionRequest(SessionStatus.SKIPPED, null));
+
+        SessionResponse restored = useCase.update(owner, ownedTeamId, ownedPeriodId, sessionId,
+                new UpdateSessionRequest(SessionStatus.SCHEDULED, null));
+
+        assertThat(restored.status()).isEqualTo(SessionStatus.SCHEDULED);
+    }
+
+    @Test
+    void reschedulesASessionWithoutAffectingOthers() {
+        useCase.generate(owner, ownedTeamId, ownedPeriodId, new GenerateSessionsRequest(Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)));
+        List<SessionResponse> before = useCase.list(owner, ownedTeamId, ownedPeriodId);
+        SessionResponse target = before.get(0);
+        LocalDate newDate = target.date().plusDays(2);
+
+        SessionResponse updated = useCase.update(owner, ownedTeamId, ownedPeriodId, new SessionId(target.id()),
+                new UpdateSessionRequest(null, newDate));
+
+        assertThat(updated.date()).isEqualTo(newDate);
+        List<SessionResponse> after = useCase.list(owner, ownedTeamId, ownedPeriodId);
+        assertThat(after).hasSameSizeAs(before);
+        List<SessionResponse> untouched = after.stream().filter(s -> !s.id().equals(target.id())).toList();
+        List<SessionResponse> untouchedBefore = before.stream().filter(s -> !s.id().equals(target.id())).toList();
+        assertThat(untouched).containsExactlyInAnyOrderElementsOf(untouchedBefore);
+    }
+
+    @Test
+    void deniesUpdatingASessionForATeamOwnedBySomeoneElse() {
+        SessionId sessionId = generateOneSession();
+        CoachId otherCoach = new CoachId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> useCase.update(otherCoach, ownedTeamId, ownedPeriodId, sessionId,
+                new UpdateSessionRequest(SessionStatus.SKIPPED, null)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void throwsNotFoundWhenUpdatingAnUnknownSession() {
+        assertThatThrownBy(() -> useCase.update(owner, ownedTeamId, ownedPeriodId, SessionId.newId(),
+                new UpdateSessionRequest(SessionStatus.SKIPPED, null)))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void throwsNotFoundWhenSessionBelongsToADifferentPeriod() {
+        SessionId sessionId = generateOneSession();
+        PeriodResponse otherPeriod = periodUseCase.create(owner, ownedTeamId,
+                new CreatePeriodRequest("Other term", START, END, MatchFormat.SEVEN_V_SEVEN));
+
+        assertThatThrownBy(() -> useCase.update(owner, ownedTeamId, new PeriodId(otherPeriod.id()), sessionId,
+                new UpdateSessionRequest(SessionStatus.SKIPPED, null)))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private SessionId generateOneSession() {
+        List<SessionResponse> sessions = useCase.generate(owner, ownedTeamId, ownedPeriodId,
+                new GenerateSessionsRequest(Set.of(DayOfWeek.THURSDAY)));
+        return new SessionId(sessions.get(0).id());
+    }
+
     private static final class InMemorySessionRepository implements SessionRepositoryPort {
 
         private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
@@ -149,6 +225,11 @@ class SessionUseCaseServiceTest {
         public Session save(Session session) {
             sessions.put(session.id().value(), session);
             return session;
+        }
+
+        @Override
+        public Optional<Session> findById(SessionId id) {
+            return Optional.ofNullable(sessions.get(id.value()));
         }
 
         @Override
