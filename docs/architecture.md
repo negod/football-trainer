@@ -397,8 +397,9 @@ persistence and API in #42, frontend in #43.
 
 ## Session Management (domain)
 
-Feature #10 (epic #2) lets a coach skip, restore or reschedule an
-individual generated session. Issue #44 covers domain and use cases only.
+Feature #10 (epic #2) lets a coach skip, restore, reschedule or add an
+ad-hoc session. Issue #44 covered domain and use cases for
+skip/restore/reschedule; #45 (below) adds `source`, persistence and the API.
 
 - `SessionStatus` gains `SKIPPED` — a pure enum addition, no schema impact
   (the column is a plain `varchar`, same reasoning as `MatchFormat`).
@@ -439,3 +440,34 @@ individual generated session. Issue #44 covers domain and use cases only.
   `generate`/`list`); a session belonging to a *different* period than the
   one in the path is reported as `ResourceNotFoundException`, same
   cross-boundary pattern used everywhere else in this codebase.
+
+### Persistence and API (issue #45)
+
+- `SessionSource` (`GENERATED`/`ADHOC`) is now a `Session` field.
+  `Session.create(...)` (recurrence generation) sets `GENERATED`;
+  `Session.createAdhoc(periodId, date)` sets `ADHOC`; `skip()`/`restore()`/
+  `reschedule(...)` all preserve whichever `source` the session already had.
+- Liquibase `0005_add_session_source.xml`: `addColumn` on the existing
+  `session` table — `source varchar(20) not null default 'GENERATED'`. A
+  `defaultValue` (not a separate backfill step) is enough since every
+  session that existed before this migration was, by definition, generated;
+  Hibernate always sends an explicit value on writes afterward, so the
+  column default only matters for that one backfill moment.
+- `SessionEntity` / `JpaSessionRepositoryAdapter` carry `source` through
+  the same way they already carried `status`.
+- `SessionController` gains two endpoints:
+  - `POST /api/teams/{teamId}/periods/{periodId}/sessions` — adds an
+    ad-hoc session (`CreateAdhocSessionRequest{date}`), `201 Created`.
+  - `PATCH /api/teams/{teamId}/periods/{periodId}/sessions/{id}` — the
+    `UpdateSessionRequest`-backed skip/restore/reschedule endpoint #44
+    already built the use case for.
+- **Duplicate-date guard added at the use-case level for both new paths**
+  (`addAdhoc`, and `update` when the `date` actually changes): before
+  saving, checks whether another session in the period already has that
+  date and rejects with `DomainValidationException` (→ 400) if so. Without
+  this, a collision would only surface as the `uq_session_period_date`
+  unique-constraint violation from #42 — a raw 500, not a validation error
+  — for a case that's entirely foreseeable (two ad-hoc adds on the same
+  day, or a reschedule landing on an existing session). Rescheduling a
+  session to its own current date is explicitly allowed (short-circuited
+  before the check) rather than tripping over itself.

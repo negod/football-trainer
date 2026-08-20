@@ -20,6 +20,7 @@ import se.backede.coachhub.domain.model.GenderCategory;
 import se.backede.coachhub.domain.model.MatchFormat;
 import se.backede.coachhub.domain.model.Period;
 import se.backede.coachhub.domain.model.Session;
+import se.backede.coachhub.domain.model.SessionSource;
 import se.backede.coachhub.domain.model.SessionStatus;
 import se.backede.coachhub.domain.model.Team;
 import se.backede.coachhub.domain.repository.PeriodRepositoryPort;
@@ -71,6 +72,19 @@ class SessionPersistenceIntegrationTest {
         assertThat(found).hasSize(1);
         assertThat(found.get(0).date()).isEqualTo(LocalDate.of(2026, 1, 6));
         assertThat(found.get(0).status()).isEqualTo(SessionStatus.SCHEDULED);
+        assertThat(found.get(0).source()).isEqualTo(SessionSource.GENERATED);
+    }
+
+    @Test
+    void savesAndReloadsAnAdhocSessionAndItsSkippedStatus() {
+        Period period = ownedPeriod();
+        Session adhoc = Session.createAdhoc(period.id(), LocalDate.of(2026, 1, 9));
+
+        sessionRepository.save(adhoc.skip());
+
+        Session found = sessionRepository.findAllByPeriod(period.id()).get(0);
+        assertThat(found.source()).isEqualTo(SessionSource.ADHOC);
+        assertThat(found.status()).isEqualTo(SessionStatus.SKIPPED);
     }
 
     @Test

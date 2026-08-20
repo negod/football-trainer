@@ -13,7 +13,8 @@ public final class SessionMapper {
                 session.id().value(),
                 session.periodId().value(),
                 session.date(),
-                session.status()
+                session.status(),
+                session.source()
         );
     }
 }

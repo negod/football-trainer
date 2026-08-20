@@ -42,7 +42,8 @@ public class JpaSessionRepositoryAdapter implements SessionRepositoryPort {
                 session.id().value(),
                 session.periodId().value(),
                 session.date(),
-                session.status()
+                session.status(),
+                session.source()
         );
     }
 
@@ -51,7 +52,8 @@ public class JpaSessionRepositoryAdapter implements SessionRepositoryPort {
                 new SessionId(entity.getId()),
                 new PeriodId(entity.getPeriodId()),
                 entity.getDate(),
-                entity.getStatus()
+                entity.getStatus(),
+                entity.getSource()
         );
     }
 }

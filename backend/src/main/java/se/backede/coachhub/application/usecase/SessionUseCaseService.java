@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import se.backede.coachhub.application.dto.CreateAdhocSessionRequest;
 import se.backede.coachhub.application.dto.GenerateSessionsRequest;
 import se.backede.coachhub.application.dto.SessionResponse;
 import se.backede.coachhub.application.dto.UpdateSessionRequest;
@@ -24,6 +25,7 @@ import se.backede.coachhub.domain.repository.SessionRepositoryPort;
 import se.backede.coachhub.domain.repository.TeamRepositoryPort;
 import se.backede.coachhub.domain.service.SessionGenerationService;
 import se.backede.coachhub.shared.exception.AccessDeniedException;
+import se.backede.coachhub.shared.exception.DomainValidationException;
 import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -79,11 +81,28 @@ public class SessionUseCaseService {
         if (request.status() != null) {
             session = request.status() == SessionStatus.SKIPPED ? session.skip() : session.restore();
         }
-        if (request.date() != null) {
+        if (request.date() != null && !request.date().equals(session.date())) {
+            requireDateAvailable(periodId, request.date());
             session = session.reschedule(request.date());
         }
 
         return SessionMapper.toResponse(sessionRepository.save(session));
+    }
+
+    /** Adds a one-off session not tied to the period's recurring weekdays. */
+    public SessionResponse addAdhoc(CoachId requester, TeamId teamId, PeriodId periodId, CreateAdhocSessionRequest request) {
+        requireOwnedPeriod(requester, teamId, periodId);
+        requireDateAvailable(periodId, request.date());
+        Session session = Session.createAdhoc(periodId, request.date());
+        return SessionMapper.toResponse(sessionRepository.save(session));
+    }
+
+    private void requireDateAvailable(PeriodId periodId, LocalDate date) {
+        boolean taken = sessionRepository.findAllByPeriod(periodId).stream()
+                .anyMatch(session -> session.date().equals(date));
+        if (taken) {
+            throw new DomainValidationException("A session already exists on " + date);
+        }
     }
 
     private Session requireOnPeriod(PeriodId periodId, SessionId sessionId) {

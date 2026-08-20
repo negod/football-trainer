@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import se.backede.coachhub.domain.model.SessionSource;
 import se.backede.coachhub.domain.model.SessionStatus;
 
 @Entity
@@ -29,15 +30,20 @@ public class SessionEntity {
     @Column(nullable = false, length = 20)
     private SessionStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SessionSource source;
+
     protected SessionEntity() {
         // JPA
     }
 
-    public SessionEntity(UUID id, UUID periodId, LocalDate date, SessionStatus status) {
+    public SessionEntity(UUID id, UUID periodId, LocalDate date, SessionStatus status, SessionSource source) {
         this.id = id;
         this.periodId = periodId;
         this.date = date;
         this.status = status;
+        this.source = source;
     }
 
     public UUID getId() {
@@ -54,5 +60,9 @@ public class SessionEntity {
 
     public SessionStatus getStatus() {
         return status;
+    }
+
+    public SessionSource getSource() {
+        return source;
     }
 }
