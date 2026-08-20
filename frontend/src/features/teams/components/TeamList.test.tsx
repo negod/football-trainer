@@ -33,4 +33,10 @@ describe('TeamList', () => {
 
     expect(screen.getByRole('link', { name: 'Roster' })).toHaveAttribute('href', '/teams/1/players');
   });
+
+  it('links to the team periods', () => {
+    render(<TeamList teams={[team]} onEdit={vi.fn()} />, { wrapper: MemoryRouter });
+
+    expect(screen.getByRole('link', { name: 'Periods' })).toHaveAttribute('href', '/teams/1/periods');
+  });
 });
