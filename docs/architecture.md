@@ -194,3 +194,40 @@ are #36 and #37).
   browser CORS. Found via manual browser verification of the edit flow,
   fixed as a one-line addition since it directly blocked this issue's
   "works end to end" completion criterion.
+
+## Season & Schedule Planning (domain)
+
+`Period` (issue #38, feature #8, epic #2) models a team's season/term.
+Domain and use cases only — no persistence, controller or frontend in this
+issue (those are #39 and #40).
+
+- `MatchFormat`: the 3v3/5v5/7v7/9v9/11v11 tier enum, deliberately its own
+  top-level domain type (not nested in `Period`) since it's shared with
+  `Drill.level` (epic #5, issue #16) and will outlive any one owner.
+  `MatchFormat.suggestedFor(birthYear)` implements SvFF's national
+  age-to-format guideline as a pure function of the current year and a
+  team's birth year — a suggestion only, always overridable; ties at the
+  9v9/11v11 boundary (age 15 falls in both tiers per the guideline) resolve
+  to 9v9.
+- `Period`: `teamId`, name, `startDate`/`endDate`, `format`. Validates a
+  non-blank name (max 100 chars, same rule as `Team`/`Player`) and that
+  `endDate` is strictly after `startDate`. Format is required and, unlike
+  `Team.genderCategory`, deliberately **not** inherited automatically from
+  `Team` — see feature #8's rationale (a cohort's playable format changes as
+  it ages, independent of the team record itself).
+- `PeriodId`: a new `UUID`-backed id (like `TeamId`), not the `String`-backed
+  `PlayerId` — that type's string-ness came from the pre-existing Fair Team
+  Splitting algorithm's design, not a general convention to follow.
+- `PeriodRepositoryPort` + `PeriodUseCaseService`: CRUD scoped through the
+  *team's* owning coach, same ownership pattern as `Player`. No `deleteById`
+  on the port/use case — feature #8's API contract only lists
+  `POST/GET/PATCH /teams/{teamId}/periods`, no `DELETE` (periods will anchor
+  generated `Session`s in #9, so removal needs its own explicit design later
+  rather than a bare delete now). `suggestFormat(requester, teamId)` loads
+  the team (enforcing the same ownership check) and returns
+  `MatchFormat.suggestedFor(team.birthYear())`; #40 decides how the frontend
+  surfaces this — reusing the use case avoids duplicating the age-to-format
+  table client-side.
+- Not yet a Spring bean, same reason and same resolution timing as
+  `PlayerUseCaseService` in #35/#36: `PeriodRepositoryPort` has no adapter
+  until #39.
