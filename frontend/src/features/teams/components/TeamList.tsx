@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import type { Team } from '../api/teamsApi';
 
 type TeamListProps = {
@@ -21,13 +23,21 @@ export function TeamList({ teams, onEdit }: TeamListProps) {
             <span className="font-medium text-slate-900">{team.name}</span>
             <span className="ml-2 text-sm text-slate-600">{team.shorthand}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => onEdit(team)}
-            className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
-          >
-            Edit
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to={`/teams/${team.id}/players`}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Roster
+            </Link>
+            <button
+              type="button"
+              onClick={() => onEdit(team)}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Edit
+            </button>
+          </div>
         </li>
       ))}
     </ul>

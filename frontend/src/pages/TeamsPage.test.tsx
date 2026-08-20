@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TeamsPage } from './TeamsPage';
@@ -18,7 +19,7 @@ describe('TeamsPage', () => {
   it('shows a loading state and then the fetched teams', async () => {
     vi.mocked(teamsApi.listTeams).mockResolvedValue([team]);
 
-    render(<TeamsPage />);
+    render(<TeamsPage />, { wrapper: MemoryRouter });
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
     expect(await screen.findByText('IFK Testby')).toBeInTheDocument();
@@ -27,7 +28,7 @@ describe('TeamsPage', () => {
   it('shows an empty state when there are no teams yet', async () => {
     vi.mocked(teamsApi.listTeams).mockResolvedValue([]);
 
-    render(<TeamsPage />);
+    render(<TeamsPage />, { wrapper: MemoryRouter });
 
     expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument();
   });
@@ -35,7 +36,7 @@ describe('TeamsPage', () => {
   it('shows an error message when loading fails', async () => {
     vi.mocked(teamsApi.listTeams).mockRejectedValue(new Error('Request failed'));
 
-    render(<TeamsPage />);
+    render(<TeamsPage />, { wrapper: MemoryRouter });
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Request failed');
   });
@@ -45,7 +46,7 @@ describe('TeamsPage', () => {
     vi.mocked(teamsApi.listTeams).mockResolvedValueOnce([]).mockResolvedValueOnce([team]);
     vi.mocked(teamsApi.createTeam).mockResolvedValue(team);
 
-    render(<TeamsPage />);
+    render(<TeamsPage />, { wrapper: MemoryRouter });
     await screen.findByText(/no teams yet/i);
 
     await user.type(screen.getByLabelText('Team name'), 'IFK Testby');
@@ -66,7 +67,7 @@ describe('TeamsPage', () => {
     vi.mocked(teamsApi.listTeams).mockResolvedValue([team]);
     vi.mocked(teamsApi.updateTeam).mockResolvedValue({ ...team, name: 'Renamed' });
 
-    render(<TeamsPage />);
+    render(<TeamsPage />, { wrapper: MemoryRouter });
     await user.click(await screen.findByRole('button', { name: 'Edit' }));
 
     expect(screen.getByRole('heading', { name: 'Edit IFK Testby' })).toBeInTheDocument();
