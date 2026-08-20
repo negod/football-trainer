@@ -291,3 +291,44 @@ Domain and use cases only in #38 — no persistence, controller or frontend
   confirmed the periods page suggested 7v7 by default, created a period,
   edited its format to 9v9, and checked the 320px layout. No CORS issues
   this time — #37 already fixed `WebConfig`'s missing `PATCH`.
+
+## Session Generation (domain)
+
+`Session` (issue #41, feature #9, epic #2) is the dated practice occasion
+generated for a `Period`'s recurring weekdays. Domain and use cases only in
+#41 — no persistence, controller or frontend (those are #42 and #43).
+
+- `Session`: `periodId`, `date`, `status`. `SessionStatus` currently has
+  only `SCHEDULED` — `SKIPPED` and a separate `source` (generated/ad-hoc)
+  are added by feature #10 (issue #44) when they're actually needed; adding
+  an enum constant later needs no migration, since the column is a plain
+  `varchar` with no DB-level check constraint (same as `GenderCategory` and
+  `MatchFormat`).
+- `SessionId`: `UUID`-backed, same as `TeamId`/`PeriodId`.
+- `SessionGenerationService.generateDates(startDate, endDate, weekdays)`: a
+  pure function (no repository access) returning every date in range whose
+  `DayOfWeek` is in the selected set. Iterates day-by-day with
+  `LocalDate.plusDays(1)`, so month/leap-year boundaries need no special
+  casing — the leap-day-crossing test in `SessionGenerationServiceTest`
+  exists to demonstrate that, not because the implementation needs it to
+  pass. Rejects a null/empty weekday selection.
+- **Weekday selection is not a persisted field on `Period`.** Feature #9's
+  API surface is only `POST .../generate-sessions` (taking the weekdays as
+  its request body) and `GET .../sessions` — there's no endpoint to
+  view/edit a stored recurrence rule independently of generating from it.
+  Storing it on `Period` would need a migration and a reason to read it back
+  that the feature doesn't ask for yet; treating it as transient generation
+  input is the minimal design that satisfies the actual contract. "Weekday
+  selection belongs to a Period" (the feature's wording) is read as an
+  *ownership-boundary* statement, not a persistence requirement.
+- `SessionRepositoryPort` + `SessionUseCaseService`: ownership resolved
+  through `Period` → `Team` → coach (same chain `Player` uses through just
+  `Team`). `generate(...)` is idempotent by construction: it loads sessions
+  already saved for the period, computes the target date set via
+  `SessionGenerationService`, and only creates sessions for dates not
+  already covered — re-running with the same weekdays creates nothing new;
+  running again with an expanded weekday set only adds the newly-covered
+  dates. `list(...)` returns sessions sorted by date.
+- Not yet a Spring bean, same reason and same resolution timing as
+  `PeriodUseCaseService` in #38/#39: `SessionRepositoryPort` has no adapter
+  until #42.
