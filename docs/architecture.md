@@ -39,8 +39,10 @@ The template includes only health endpoints and shared infrastructure. The first
 epic #96) hold the pure algorithm for splitting the players present at a
 session into balanced teams:
 
-- `PlayerId`: a validated player identifier, kept independent of the not-yet-built
-  `Player` entity (epic #1) so the algorithm has no build-order dependency on it.
+- `PlayerId`: a validated player identifier. Originally kept independent of
+  the not-yet-built `Player` entity so the algorithm had no build-order
+  dependency on it; now that `Player` exists (issue #35), it reuses this
+  same type rather than introducing a second id.
 - `TeamAssignment`: a full split — a list of teams, each a list of `PlayerId` —
   used both as the algorithm's output and as the shape of a previously saved
   assignment fed back in as history.
@@ -113,4 +115,40 @@ ownership boundary:
 - `frontend/src/pages/TeamsPage.tsx`: the first route page — fetches the
   list via `useAsync`, and switches `TeamForm` between create and edit mode.
   `App.tsx`/`main.tsx` now wire up `react-router-dom` for the first time.
+
+## Player Roster (domain)
+
+`Player` (issue #35, feature #7, epic #1) models a team's roster. Domain and
+use cases only — no persistence, controller or frontend yet (those are #36
+and #37).
+
+- `Player`: `teamId` (a `TeamId`), name, birth year, optional `position`.
+  Validates a non-blank name (max 100 chars), a plausible non-future birth
+  year (same rule as `Team`), and — if given — a non-blank `position` up to
+  50 chars; a blank position is normalized to `null` rather than rejected,
+  since the field is optional free text (not an enum — terminology varies by
+  club and age group). `Player.belongsToTeam(TeamId)` backs the ownership
+  check below.
+- `PlayerId`: the identifier introduced for Fair Team Splitting (#106) is
+  reused as-is rather than duplicated — see "Fair Team Splitting" above.
+  `PlayerId.newId()` was added for `Player.create(...)` to mint one.
+- `PlayerRepositoryPort` + `PlayerUseCaseService`: CRUD scoped through the
+  *team's* owning coach, since a player has no owner of its own. Every
+  operation first loads the team via `TeamRepositoryPort` and throws
+  `AccessDeniedException` if the requester doesn't own it (`ResourceNotFoundException`
+  if the team itself doesn't exist); a player found by id that belongs to a
+  *different* team is also reported as `ResourceNotFoundException` rather
+  than `AccessDeniedException`, so a coach can't use another team's player
+  ids to probe for existence.
+- **Not yet a Spring bean.** `PlayerUseCaseService` deliberately omits
+  `@Service`: `PlayerRepositoryPort` has no implementation until #36 adds the
+  JPA adapter, and the full-context `TeamPersistenceIntegrationTest` (added
+  in #33) would otherwise fail to autowire an unimplemented port. #36 adds
+  `@Service` back alongside the adapter — this mirrors how #32/#33 split the
+  same work for `Team`, just made explicit here because a full-context test
+  now exists to catch the gap.
+- Deletion's effect on future references (the feature's "handled explicitly
+  rather than silently broken" acceptance criterion) is moot for now since
+  nothing yet references a `Player` by id; revisit once Session/attendance
+  (epic #2) exists.
 
