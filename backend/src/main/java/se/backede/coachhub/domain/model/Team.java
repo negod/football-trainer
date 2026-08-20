@@ -18,7 +18,9 @@ public record Team(TeamId id, CoachId ownerId, String name, int birthYear, Gende
     public Team {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(ownerId, "ownerId must not be null");
-        Objects.requireNonNull(genderCategory, "genderCategory must not be null");
+        if (genderCategory == null) {
+            throw new DomainValidationException("Team gender category must be provided");
+        }
         if (name == null || name.isBlank()) {
             throw new DomainValidationException("Team name must not be blank");
         }

@@ -1,5 +1,6 @@
 package se.backede.coachhub.infrastructure.web;
 
+import se.backede.coachhub.shared.exception.AccessDeniedException;
 import se.backede.coachhub.shared.exception.DomainValidationException;
 import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException exception) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+        return error(HttpStatus.FORBIDDEN, exception.getMessage(), List.of());
     }
 
     @ExceptionHandler(DomainValidationException.class)

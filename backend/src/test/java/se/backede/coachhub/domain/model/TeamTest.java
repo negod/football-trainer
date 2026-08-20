@@ -40,6 +40,12 @@ class TeamTest {
     }
 
     @Test
+    void rejectsAMissingGenderCategory() {
+        assertThatThrownBy(() -> Team.create(coach(), "Team", 2019, null))
+                .isInstanceOf(DomainValidationException.class);
+    }
+
+    @Test
     void rejectsABirthYearInTheFuture() {
         int nextYear = Year.now().getValue() + 1;
 
