@@ -4,9 +4,17 @@ import { Link, useParams } from 'react-router-dom';
 import { ErrorMessage } from '../shared/components/ErrorMessage';
 import { LoadingMessage } from '../shared/components/LoadingMessage';
 import { useAsync } from '../shared/hooks/useAsync';
+import { AddAdhocSessionForm } from '../features/sessions/components/AddAdhocSessionForm';
 import { SessionGenerationForm } from '../features/sessions/components/SessionGenerationForm';
 import { SessionList } from '../features/sessions/components/SessionList';
-import { generateSessions, listSessions, type Weekday } from '../features/sessions/api/sessionsApi';
+import {
+  addAdhocSession,
+  generateSessions,
+  listSessions,
+  updateSession,
+  type Session,
+  type Weekday,
+} from '../features/sessions/api/sessionsApi';
 import { getPeriod } from '../features/periods/api/periodsApi';
 
 export function SessionsPage() {
@@ -24,6 +32,26 @@ export function SessionsPage() {
 
   async function handleGenerate(weekdays: Weekday[]) {
     await generateSessions(teamId, periodId, weekdays);
+    setReloadKey((key) => key + 1);
+  }
+
+  async function handleAddAdhoc(date: string) {
+    await addAdhocSession(teamId, periodId, date);
+    setReloadKey((key) => key + 1);
+  }
+
+  async function handleSkip(session: Session) {
+    await updateSession(teamId, periodId, session.id, { status: 'SKIPPED' });
+    setReloadKey((key) => key + 1);
+  }
+
+  async function handleRestore(session: Session) {
+    await updateSession(teamId, periodId, session.id, { status: 'SCHEDULED' });
+    setReloadKey((key) => key + 1);
+  }
+
+  async function handleReschedule(session: Session, newDate: string) {
+    await updateSession(teamId, periodId, session.id, { date: newDate });
     setReloadKey((key) => key + 1);
   }
 
@@ -48,7 +76,14 @@ export function SessionsPage() {
         </h2>
         {sessionsLoading && <LoadingMessage />}
         {sessionsError && <ErrorMessage message={sessionsError} />}
-        {!sessionsLoading && !sessionsError && sessions && <SessionList sessions={sessions} />}
+        {!sessionsLoading && !sessionsError && sessions && (
+          <SessionList
+            sessions={sessions}
+            onSkip={handleSkip}
+            onRestore={handleRestore}
+            onReschedule={handleReschedule}
+          />
+        )}
       </section>
 
       {period && (
@@ -63,6 +98,13 @@ export function SessionsPage() {
           />
         </section>
       )}
+
+      <section aria-labelledby="adhoc-heading" className="flex max-w-md flex-col gap-3">
+        <h2 id="adhoc-heading" className="text-lg font-medium text-slate-900">
+          Add a one-off session
+        </h2>
+        <AddAdhocSessionForm onAdd={handleAddAdhoc} />
+      </section>
     </div>
   );
 }

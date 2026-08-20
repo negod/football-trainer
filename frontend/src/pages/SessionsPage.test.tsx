@@ -20,7 +20,7 @@ const period: Period = {
   endDate: '2026-01-31',
   format: 'SEVEN_V_SEVEN',
 };
-const session: Session = { id: 's1', periodId: 'p1', date: '2026-01-06', status: 'SCHEDULED' };
+const session: Session = { id: 's1', periodId: 'p1', date: '2026-01-06', status: 'SCHEDULED', source: 'GENERATED' };
 
 function renderPage() {
   return render(
@@ -77,5 +77,54 @@ describe('SessionsPage', () => {
 
     await waitFor(() => expect(sessionsApi.generateSessions).toHaveBeenCalledWith('1', 'p1', ['TUESDAY']));
     expect(await screen.findByText('2026-01-06')).toBeInTheDocument();
+  });
+
+  it('adds an ad-hoc session and reloads the list', async () => {
+    const user = userEvent.setup();
+    const adhoc: Session = { ...session, id: 's2', date: '2026-01-10', source: 'ADHOC' };
+    vi.mocked(sessionsApi.listSessions).mockResolvedValueOnce([]).mockResolvedValueOnce([adhoc]);
+    vi.mocked(sessionsApi.addAdhocSession).mockResolvedValue(adhoc);
+
+    renderPage();
+    await screen.findByText(/no sessions yet/i);
+
+    const dateInput = screen.getByLabelText('Date');
+    await user.clear(dateInput);
+    await user.type(dateInput, '2026-01-10');
+    await user.click(screen.getByRole('button', { name: 'Add session' }));
+
+    await waitFor(() => expect(sessionsApi.addAdhocSession).toHaveBeenCalledWith('1', 'p1', '2026-01-10'));
+    expect(await screen.findByText('2026-01-10')).toBeInTheDocument();
+  });
+
+  it('skips a session after confirmation and reloads the list', async () => {
+    const user = userEvent.setup();
+    const skipped: Session = { ...session, status: 'SKIPPED' };
+    vi.mocked(sessionsApi.listSessions).mockResolvedValueOnce([session]).mockResolvedValueOnce([skipped]);
+    vi.mocked(sessionsApi.updateSession).mockResolvedValue(skipped);
+
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Skip' }));
+    await user.click(screen.getByRole('button', { name: 'Confirm skip' }));
+
+    await waitFor(() => expect(sessionsApi.updateSession).toHaveBeenCalledWith('1', 'p1', 's1', { status: 'SKIPPED' }));
+    expect(await screen.findByText('Skipped')).toBeInTheDocument();
+  });
+
+  it('reschedules a session and reloads the list', async () => {
+    const user = userEvent.setup();
+    const rescheduled: Session = { ...session, date: '2026-01-13' };
+    vi.mocked(sessionsApi.listSessions).mockResolvedValueOnce([session]).mockResolvedValueOnce([rescheduled]);
+    vi.mocked(sessionsApi.updateSession).mockResolvedValue(rescheduled);
+
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Reschedule' }));
+    const dateInput = screen.getByLabelText('New date');
+    await user.clear(dateInput);
+    await user.type(dateInput, '2026-01-13');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(sessionsApi.updateSession).toHaveBeenCalledWith('1', 'p1', 's1', { date: '2026-01-13' }));
+    expect(await screen.findByText('2026-01-13')).toBeInTheDocument();
   });
 });
