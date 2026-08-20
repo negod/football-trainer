@@ -471,3 +471,38 @@ skip/restore/reschedule; #45 (below) adds `source`, persistence and the API.
   day, or a reschedule landing on an existing session). Rescheduling a
   session to its own current date is explicitly allowed (short-circuited
   before the check) rather than tripping over itself.
+
+### Frontend (issue #46)
+
+- `sessionsApi.ts` gains `updateSession` (PATCH, partial `{status?, date?}`)
+  and `addAdhocSession`; `Session`/`SessionStatus`/`SessionSource` types
+  extended to match the backend.
+- `SessionRow` (new; `SessionList` now maps over it): per-session
+  skip/restore/reschedule, replacing the earlier read-only row from #43.
+  - **Skip requires confirmation** (feature #10's UX note) — clicking
+    "Skip" reveals an inline "Skip this session? / Confirm skip / Cancel"
+    prompt rather than calling the API immediately, and rather than
+    `window.confirm` (harder to test, blocks the JS thread). Restoring a
+    skipped session has no such step — feature #10 only calls out
+    confirmation for skip, and restore is the safe, reversing direction.
+  - Reschedule toggles an inline date input + Save/Cancel, mirroring the
+    create/edit-mode toggle pattern already used by `PeriodForm`/`PlayerForm`
+    but scoped to one row instead of a whole section.
+  - A session's `source === 'ADHOC'` shows an "Ad-hoc" badge; `SKIPPED`
+    sessions show a strikethrough date and a "Skipped" label.
+  - Row-level errors (e.g. the #45 duplicate-date guard rejecting a
+    reschedule) render inline on that row and leave it in its editing
+    state, rather than silently discarding the attempted change.
+- `AddAdhocSessionForm` (new): a single date field, added as its own
+  section on `SessionsPage` alongside the existing weekday-generation form.
+- Manually verified in a real browser against an isolated dev stack
+  (Postgres on 5433, backend on 8081, frontend on 5174 — reserved on the
+  issue, torn down after): generated 4 January 2026 Tuesdays, skipped one
+  with the confirm step, restored it, rescheduled it to Jan 8, then
+  attempted to reschedule a different session onto the now-taken Jan 8 —
+  got the inline "A session already exists on 2026-01-08" error with the
+  row still in its editing state, cancelled it, then added an ad-hoc
+  session on Jan 2 and confirmed it sorted correctly with the "Ad-hoc"
+  badge. Checked the 320px layout; no unexpected console errors (the one
+  logged 400 was the deliberately-triggered duplicate-date attempt).
+
