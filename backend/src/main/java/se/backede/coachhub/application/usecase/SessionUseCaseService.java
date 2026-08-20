@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+
 import se.backede.coachhub.application.dto.GenerateSessionsRequest;
 import se.backede.coachhub.application.dto.SessionResponse;
 import se.backede.coachhub.application.mapper.SessionMapper;
@@ -21,13 +23,7 @@ import se.backede.coachhub.domain.service.SessionGenerationService;
 import se.backede.coachhub.shared.exception.AccessDeniedException;
 import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 
-/**
- * Not yet a Spring bean ({@code @Service}): {@link SessionRepositoryPort} has
- * no implementation until #42 adds the JPA adapter, and the full-context
- * persistence integration tests would fail to autowire an unimplemented
- * port. #42 adds {@code @Service} back alongside the adapter — same
- * approach as #35/#36 for {@code Player} and #38/#39 for {@code Period}.
- */
+@Service
 public class SessionUseCaseService {
 
     private final SessionRepositoryPort sessionRepository;
