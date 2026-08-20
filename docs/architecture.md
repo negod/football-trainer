@@ -57,3 +57,24 @@ Persistence (`team_assignment` / `team_assignment_member` tables), the REST
 API and wiring to real `Player`/`Session` records are added in #107; the
 frontend in #108.
 
+## Team & Roster Foundation (domain)
+
+`Team` (issue #32, feature #6, epic #1) is the first piece of the real
+ownership boundary:
+
+- `CoachId`: the authenticated coach identity every private resource is
+  scoped to. Coach accounts (epic #20) don't exist yet, so this is a
+  standalone value type for now; once #20 lands, its id fills this role and
+  the infrastructure layer resolves it from the security context instead of
+  a caller-supplied value.
+- `Team`: name, birth year, gender category (`GenderCategory`:
+  boys/girls/mixed). Validates a non-blank name (max 100 chars) and a
+  plausible, non-future birth year. `Team.shorthand()` derives the Swedish
+  convention (e.g. "P19") from gender + birth year. Match format is
+  intentionally not stored here (see feature #6) — it will live on `Period`
+  (epic #2) instead, since it changes as the cohort ages.
+- `TeamRepositoryPort` + `TeamUseCaseService`: CRUD scoped to the owning
+  coach — `AccessDeniedException` (new in `shared/exception`) when a
+  requester doesn't own the team, `ResourceNotFoundException` when it
+  doesn't exist. No persistence or controller yet (issue #33).
+
