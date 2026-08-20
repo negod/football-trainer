@@ -25,6 +25,12 @@ export function TeamList({ teams, onEdit }: TeamListProps) {
           </div>
           <div className="flex gap-2">
             <Link
+              to={`/teams/${team.id}/periods`}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Periods
+            </Link>
+            <Link
               to={`/teams/${team.id}/players`}
               className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >

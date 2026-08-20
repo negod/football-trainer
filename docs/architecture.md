@@ -256,3 +256,38 @@ Domain and use cases only in #38 — no persistence, controller or frontend
   existing `/api/teams/**` permit-list entry already covers
   `/api/teams/{teamId}/periods/**`; already verified with a real filter
   chain by `PlayerSecurityConfigTest`, so not re-verified per resource.
+
+### Frontend (issue #40)
+
+- `frontend/src/features/periods/api/periodsApi.ts`: typed `listPeriods` /
+  `createPeriod` / `updatePeriod` / `getSuggestedFormat` against
+  `/teams/{teamId}/periods`. No `deletePeriod` — matches #39's contract
+  (periods have no delete endpoint yet).
+- `frontend/src/features/periods/matchFormat.ts`: the `MatchFormat` →
+  display-label map (`3v3`…`11v11`) and the ordered list used to populate
+  the format `<select>`. Pulled out of `PeriodForm` into its own module
+  (rather than exported alongside the component) purely to satisfy the
+  `react-refresh/only-export-components` lint rule; `PeriodList` needs the
+  same labels for its list rows.
+- `PeriodForm`: on create, defaults `format` to the `suggestedFormat` prop
+  (fetched via `getSuggestedFormat`) with a note under the label that it's a
+  suggestion and stays overridable — the acceptance criterion in feature #8.
+  On edit, the period's own stored format is used instead, never the
+  suggestion. `PeriodsPage` keys the form on
+  `` `create-${suggestedFormat ?? 'pending'}` `` so it remounts (and picks
+  up the real default) once the suggestion finishes loading, since the
+  suggestion arrives asynchronously after the form's first render.
+- `PeriodList`: no delete/remove action, unlike `PlayerList` — periods have
+  no delete endpoint (see #39).
+- `frontend/src/pages/PeriodsPage.tsx`: route `/teams/:teamId/periods`
+  (added to `App.tsx`). Loads the team, the period list and the suggested
+  format independently via `useAsync`; create/edit reload the list the same
+  way `PlayersPage` does.
+- `TeamList` gained a "Periods" link (alongside the existing "Roster" link)
+  to `/teams/{id}/periods` — the entry point into this flow.
+- Manually verified in a real browser against an isolated dev stack
+  (Postgres on 5433, backend on 8081, frontend on 5174 — reserved on the
+  issue, torn down after): created a team (birth year 2015 → age 11),
+  confirmed the periods page suggested 7v7 by default, created a period,
+  edited its format to 9v9, and checked the 320px layout. No CORS issues
+  this time — #37 already fixed `WebConfig`'s missing `PATCH`.
