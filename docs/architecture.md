@@ -295,8 +295,8 @@ Domain and use cases only in #38 — no persistence, controller or frontend
 ## Session Generation (domain)
 
 `Session` (issue #41, feature #9, epic #2) is the dated practice occasion
-generated for a `Period`'s recurring weekdays. Domain and use cases only in
-#41 — no persistence, controller or frontend (those are #42 and #43).
+generated for a `Period`'s recurring weekdays. Domain and use cases in #41 —
+persistence and API in #42, frontend in #43.
 
 - `Session`: `periodId`, `date`, `status`. `SessionStatus` currently has
   only `SCHEDULED` — `SKIPPED` and a separate `source` (generated/ad-hoc)
@@ -332,3 +332,27 @@ generated for a `Period`'s recurring weekdays. Domain and use cases only in
 - Not yet a Spring bean, same reason and same resolution timing as
   `PeriodUseCaseService` in #38/#39: `SessionRepositoryPort` has no adapter
   until #42.
+
+### Persistence and API (issue #42)
+
+- Liquibase `0004_create_session.xml`: `session` table (`id`, `period_id`,
+  `date`, `status`) with an `fk_session_period` foreign key to `period(id)`,
+  an index on `period_id`, and a `uq_session_period_date` unique constraint
+  on `(period_id, date)` — a DB-level backstop for the idempotency
+  requirement, on top of the use case's own existing-dates check; it's not
+  expected to ever actually reject anything given that check, but a
+  duplicate-free schema is cheap insurance against a future bug in the
+  application-layer diff.
+- `SessionEntity` / `SpringDataSessionRepository` / `JpaSessionRepositoryAdapter`
+  implement `SessionRepositoryPort`, same pattern as `Team`/`Player`/`Period`.
+  `SessionUseCaseService` is `@Service` again now that the adapter exists.
+- `SessionController`: `POST /api/teams/{teamId}/periods/{periodId}/generate-sessions`,
+  `GET /api/teams/{teamId}/periods/{periodId}/sessions` — matches feature
+  #9's contract exactly. `generate-sessions` returns `200 OK` with the full
+  current session list rather than `201 Created`: it's an idempotent
+  "sync to this recurrence" action, not a classic single-resource create,
+  so a call that adds nothing new still returns successfully with the
+  unchanged list rather than implying a fresh resource was made.
+- No `SecurityConfig` change, same reasoning as #36/#39: `/api/teams/**`
+  already covers the nested route.
+
