@@ -22,6 +22,10 @@ export function listPeriods(teamId: string): Promise<Period[]> {
   return apiRequest<Period[]>(`/teams/${teamId}/periods`);
 }
 
+export function getPeriod(teamId: string, id: string): Promise<Period> {
+  return apiRequest<Period>(`/teams/${teamId}/periods/${id}`);
+}
+
 export function createPeriod(teamId: string, input: PeriodInput): Promise<Period> {
   return apiRequest<Period>(`/teams/${teamId}/periods`, {
     method: 'POST',

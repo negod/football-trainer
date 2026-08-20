@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom';
 import { TeamsPage } from '../pages/TeamsPage';
 import { PlayersPage } from '../pages/PlayersPage';
 import { PeriodsPage } from '../pages/PeriodsPage';
+import { SessionsPage } from '../pages/SessionsPage';
 
 export function App() {
   return (
@@ -19,6 +20,7 @@ export function App() {
           <Route path="/" element={<TeamsPage />} />
           <Route path="/teams/:teamId/players" element={<PlayersPage />} />
           <Route path="/teams/:teamId/periods" element={<PeriodsPage />} />
+          <Route path="/teams/:teamId/periods/:periodId/sessions" element={<SessionsPage />} />
         </Routes>
       </main>
     </div>

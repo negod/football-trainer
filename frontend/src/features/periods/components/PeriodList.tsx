@@ -1,12 +1,15 @@
+import { Link } from 'react-router-dom';
+
 import type { Period } from '../api/periodsApi';
 import { MATCH_FORMAT_LABELS } from '../matchFormat';
 
 type PeriodListProps = {
+  teamId: string;
   periods: Period[];
   onEdit: (period: Period) => void;
 };
 
-export function PeriodList({ periods, onEdit }: PeriodListProps) {
+export function PeriodList({ teamId, periods, onEdit }: PeriodListProps) {
   if (periods.length === 0) {
     return <p className="text-sm text-slate-600">No periods yet. Define your first season below.</p>;
   }
@@ -24,13 +27,21 @@ export function PeriodList({ periods, onEdit }: PeriodListProps) {
               {period.startDate} – {period.endDate} · {MATCH_FORMAT_LABELS[period.format]}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => onEdit(period)}
-            className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
-          >
-            Edit
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to={`/teams/${teamId}/periods/${period.id}/sessions`}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Sessions
+            </Link>
+            <button
+              type="button"
+              onClick={() => onEdit(period)}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Edit
+            </button>
+          </div>
         </li>
       ))}
     </ul>

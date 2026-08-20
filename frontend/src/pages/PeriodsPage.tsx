@@ -64,7 +64,7 @@ export function PeriodsPage() {
         {periodsLoading && <LoadingMessage />}
         {periodsError && <ErrorMessage message={periodsError} />}
         {!periodsLoading && !periodsError && periods && (
-          <PeriodList periods={periods} onEdit={setEditingPeriod} />
+          <PeriodList teamId={teamId} periods={periods} onEdit={setEditingPeriod} />
         )}
       </section>
 
