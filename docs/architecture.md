@@ -76,5 +76,29 @@ ownership boundary:
 - `TeamRepositoryPort` + `TeamUseCaseService`: CRUD scoped to the owning
   coach — `AccessDeniedException` (new in `shared/exception`) when a
   requester doesn't own the team, `ResourceNotFoundException` when it
-  doesn't exist. No persistence or controller yet (issue #33).
+  doesn't exist.
+
+### Persistence and API (issue #33)
+
+- Liquibase `0001_create_team.xml`: `team` table (`id`, `owner_id`, `name`,
+  `birth_year`, `gender_category`) with an index on `owner_id`.
+- `TeamEntity` / `SpringDataTeamRepository` / `JpaTeamRepositoryAdapter`
+  implement `TeamRepositoryPort` — the domain never sees the entity.
+- `TeamController`: `POST /api/teams`, `GET /api/teams`,
+  `GET /api/teams/{id}`, `PATCH /api/teams/{id}`. Ownership is never taken
+  from the request; the controller asks `CurrentCoachResolver` for it.
+- **Interim single-tenant auth seam.** `CurrentCoachResolver` is an
+  infrastructure port; its only implementation right now,
+  `SingleTenantCurrentCoachResolver`, always returns the same fixed
+  `CoachId` (`00000000-0000-0000-0000-000000000001`). `SecurityConfig`
+  permits `/api/teams/**` so the app is actually usable before epic #20
+  (Coach Accounts & Authentication) exists — every subsequent controller
+  under the same ownership boundary (players, sessions, team-split) should
+  follow the same pattern. This is a deliberate, tracked deviation from
+  feature #6/#7's literal "authenticated coach" wording, agreed as an
+  interim step; **epic #20 must delete `SingleTenantCurrentCoachResolver`,
+  add a real implementation backed by `SecurityContextHolder`, and lock
+  `SecurityConfig` back down to `.authenticated()`** — nothing else needs to
+  change, since every use case already takes an explicit `CoachId` and
+  enforces ownership with it.
 
