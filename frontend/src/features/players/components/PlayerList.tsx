@@ -1,0 +1,48 @@
+import type { Player } from '../api/playersApi';
+
+type PlayerListProps = {
+  players: Player[];
+  onEdit: (player: Player) => void;
+  onRemove: (player: Player) => void;
+};
+
+export function PlayerList({ players, onEdit, onRemove }: PlayerListProps) {
+  if (players.length === 0) {
+    return <p className="text-sm text-slate-600">No players yet. Add your first player below.</p>;
+  }
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {players.map((player) => (
+        <li
+          key={player.id}
+          className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3"
+        >
+          <div>
+            <span className="font-medium text-slate-900">{player.name}</span>
+            <span className="ml-2 text-sm text-slate-600">
+              {player.birthYear}
+              {player.position ? ` · ${player.position}` : ''}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit(player)}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemove(player)}
+              className="rounded-md border border-red-200 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Remove
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}

@@ -20,6 +20,10 @@ export function listTeams(): Promise<Team[]> {
   return apiRequest<Team[]>('/teams');
 }
 
+export function getTeam(id: string): Promise<Team> {
+  return apiRequest<Team>(`/teams/${id}`);
+}
+
 export function createTeam(input: TeamInput): Promise<Team> {
   return apiRequest<Team>('/teams', {
     method: 'POST',

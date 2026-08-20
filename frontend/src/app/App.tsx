@@ -2,6 +2,7 @@ import { ShieldCheck } from 'lucide-react';
 import { Route, Routes } from 'react-router-dom';
 
 import { TeamsPage } from '../pages/TeamsPage';
+import { PlayersPage } from '../pages/PlayersPage';
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
       <main className="mx-auto max-w-5xl px-4 py-8">
         <Routes>
           <Route path="/" element={<TeamsPage />} />
+          <Route path="/teams/:teamId/players" element={<PlayersPage />} />
         </Routes>
       </main>
     </div>

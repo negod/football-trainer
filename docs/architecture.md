@@ -166,3 +166,31 @@ are #36 and #37).
   (unlike the other controller tests, which disable it) to confirm this
   rather than assume it, so no separate `/api/teams/*/players/**` entry was
   added.
+
+### Frontend (issue #37)
+
+- `frontend/src/features/players/api/playersApi.ts`: typed `listPlayers` /
+  `createPlayer` / `updatePlayer` / `deletePlayer` calling
+  `/teams/{teamId}/players` through the shared `apiRequest` client.
+  `teamsApi.ts` gained `getTeam(id)` (the backend endpoint already existed;
+  the frontend just hadn't needed it yet) to show the roster page's heading.
+- `frontend/src/features/players/components`: `PlayerForm` (create/edit,
+  position is a plain optional text input, submitted as `null` when blank)
+  and `PlayerList` (Edit + Remove per row — unlike `TeamList`, which has no
+  delete action since #34 never wired one up; removal is one of feature #7's
+  acceptance criteria, so `PlayerList` needed it from the start).
+- `frontend/src/pages/PlayersPage.tsx`: route `/teams/:teamId/players`
+  (added to `App.tsx`). Loads the team (for the heading) and the roster
+  independently via `useAsync`; create/edit reload the list the same way
+  `TeamsPage` does, and remove has its own error handling since it isn't
+  behind a form.
+- `TeamList` gained a "Roster" link to `/teams/{id}/players` — the only entry
+  point into the roster UI, so it was a required (not incidental) change
+  here despite touching #34's component.
+- **Bug fixed in passing:** `WebConfig`'s CORS `allowedMethods` was missing
+  `PATCH`, so the browser's preflight for every `PATCH` request (edit, for
+  both `Team` and `Player`) was rejected with 403 before reaching the
+  controller — invisible in existing tests since none exercise real
+  browser CORS. Found via manual browser verification of the edit flow,
+  fixed as a one-line addition since it directly blocked this issue's
+  "works end to end" completion criterion.
