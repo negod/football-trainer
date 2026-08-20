@@ -198,8 +198,8 @@ are #36 and #37).
 ## Season & Schedule Planning (domain)
 
 `Period` (issue #38, feature #8, epic #2) models a team's season/term.
-Domain and use cases only — no persistence, controller or frontend in this
-issue (those are #39 and #40).
+Domain and use cases only in #38 — no persistence, controller or frontend
+(those are #39 and #40).
 
 - `MatchFormat`: the 3v3/5v5/7v7/9v9/11v11 tier enum, deliberately its own
   top-level domain type (not nested in `Period`) since it's shared with
@@ -231,3 +231,28 @@ issue (those are #39 and #40).
 - Not yet a Spring bean, same reason and same resolution timing as
   `PlayerUseCaseService` in #35/#36: `PeriodRepositoryPort` has no adapter
   until #39.
+
+### Persistence and API (issue #39)
+
+- Liquibase `0003_create_period.xml`: `period` table (`id`, `team_id`, `name`,
+  `start_date`, `end_date`, `format`) with an `fk_period_team` foreign key to
+  `team(id)` and an index on `team_id`.
+- `PeriodEntity` / `SpringDataPeriodRepository` / `JpaPeriodRepositoryAdapter`
+  implement `PeriodRepositoryPort`, same pattern as `Team`/`Player`.
+  `PeriodUseCaseService` is `@Service` again now that the adapter exists.
+- `PeriodController`: `POST/GET /api/teams/{teamId}/periods`,
+  `GET/PATCH /api/teams/{teamId}/periods/{id}` — matches feature #8's
+  contract exactly (no `DELETE`, per #38's note). Also adds
+  `GET /api/teams/{teamId}/periods/suggested-format`, not explicitly listed
+  in the feature card but needed to satisfy its "a default format is
+  suggested" acceptance criterion without duplicating
+  `MatchFormat.suggestedFor`'s age-to-format table in TypeScript; #38 already
+  built and tested `PeriodUseCaseService.suggestFormat` for exactly this.
+  Placed as a literal `/suggested-format` segment ahead of the `/{id}`
+  mapping — Spring's path matching ranks literal segments over path
+  variables, so this doesn't collide with period-by-id lookups (the same
+  pattern REST APIs commonly use, e.g. `/users/me` vs. `/users/{id}`).
+- No `SecurityConfig` change, same reasoning as #36 for players: the
+  existing `/api/teams/**` permit-list entry already covers
+  `/api/teams/{teamId}/periods/**`; already verified with a real filter
+  chain by `PlayerSecurityConfigTest`, so not re-verified per resource.

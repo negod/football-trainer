@@ -2,6 +2,8 @@ package se.backede.coachhub.application.usecase;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import se.backede.coachhub.application.dto.CreatePeriodRequest;
 import se.backede.coachhub.application.dto.PeriodResponse;
 import se.backede.coachhub.application.dto.UpdatePeriodRequest;
@@ -17,13 +19,7 @@ import se.backede.coachhub.domain.repository.TeamRepositoryPort;
 import se.backede.coachhub.shared.exception.AccessDeniedException;
 import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 
-/**
- * Not yet a Spring bean ({@code @Service}): {@link PeriodRepositoryPort} has
- * no implementation until #39 adds the JPA adapter, and the full-context
- * persistence integration tests would fail to autowire an unimplemented
- * port. #39 adds {@code @Service} back alongside the adapter — same
- * approach as #35/#36 for {@code Player}.
- */
+@Service
 public class PeriodUseCaseService {
 
     private final PeriodRepositoryPort periodRepository;
