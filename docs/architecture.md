@@ -356,3 +356,41 @@ persistence and API in #42, frontend in #43.
 - No `SecurityConfig` change, same reasoning as #36/#39: `/api/teams/**`
   already covers the nested route.
 
+### Frontend (issue #43)
+
+- `frontend/src/features/sessions/api/sessionsApi.ts`: typed `listSessions` /
+  `generateSessions` against `/teams/{teamId}/periods/{periodId}/...`.
+- `frontend/src/features/sessions/dateMatching.ts`: a client-side
+  `countMatchingDates(startDate, endDate, weekdays)`, used only to preview
+  the session count before the coach confirms generation (feature #9's "a
+  preview of the resulting session count before confirming" UX note).
+  Unlike `MatchFormat.suggestedFor`'s age table, this is pure calendar
+  weekday-matching arithmetic — deterministic, no judgment call — so
+  duplicating it client-side isn't duplicating a business rule the way a
+  dedicated backend endpoint was worth adding for the format suggestion in
+  #39. The actual generation, and its idempotency, always happens
+  server-side via `generateSessions`; this is a preview only.
+- `SessionGenerationForm`: a weekday checkbox `<fieldset>` (native
+  checkboxes, so keyboard/touch operable for free) plus the live preview
+  count, disabled until at least one weekday is checked.
+- `SessionList`: read-only — no edit/skip/remove yet, since that's feature
+  #10's job (issue #44-46) once `Session` gains a `SKIPPED` status.
+- `frontend/src/pages/SessionsPage.tsx`: route
+  `/teams/:teamId/periods/:periodId/sessions` (added to `App.tsx`). Loads
+  the period (for the heading and date range) and the session list
+  independently via `useAsync`; generating reloads the list the same way
+  other pages reload after a mutation.
+- `PeriodList` gained a "Sessions" link per row (alongside "Edit") to
+  `/teams/{teamId}/periods/{id}/sessions` — the entry point into this flow;
+  it now takes `teamId` as a prop to build that link.
+- `periodsApi.ts` gained `getPeriod(teamId, id)` (the backend endpoint
+  already existed) so the sessions page can show the period's name and
+  date range.
+- Manually verified in a real browser against an isolated dev stack
+  (Postgres on 5433, backend on 8081, frontend on 5174 — reserved on the
+  issue, torn down after): created a team, a period (Jan 2026, 7v7),
+  selected Tue+Thu, confirmed the preview showed "9 sessions" (4 Tuesdays +
+  5 Thursdays that January), generated them and got exactly those 9 dates
+  in order, generated again with the same weekdays and confirmed the count
+  stayed at 9 (idempotency holding through the real UI, not just the
+  backend tests), and checked the 320px layout. No console errors.
