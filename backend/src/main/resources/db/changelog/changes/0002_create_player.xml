@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0002-create-player" author="claude">
+        <createTable tableName="player">
+            <column name="id" type="varchar(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="team_id" type="uuid">
+                <constraints nullable="false" foreignKeyName="fk_player_team" references="team(id)"/>
+            </column>
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="birth_year" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="position" type="varchar(50)"/>
+        </createTable>
+        <createIndex indexName="idx_player_team_id" tableName="player">
+            <column name="team_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

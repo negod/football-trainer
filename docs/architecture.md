@@ -119,8 +119,8 @@ ownership boundary:
 ## Player Roster (domain)
 
 `Player` (issue #35, feature #7, epic #1) models a team's roster. Domain and
-use cases only — no persistence, controller or frontend yet (those are #36
-and #37).
+use cases only — no persistence, controller or frontend in this issue (those
+are #36 and #37).
 
 - `Player`: `teamId` (a `TeamId`), name, birth year, optional `position`.
   Validates a non-blank name (max 100 chars), a plausible non-future birth
@@ -140,15 +140,29 @@ and #37).
   *different* team is also reported as `ResourceNotFoundException` rather
   than `AccessDeniedException`, so a coach can't use another team's player
   ids to probe for existence.
-- **Not yet a Spring bean.** `PlayerUseCaseService` deliberately omits
-  `@Service`: `PlayerRepositoryPort` has no implementation until #36 adds the
-  JPA adapter, and the full-context `TeamPersistenceIntegrationTest` (added
-  in #33) would otherwise fail to autowire an unimplemented port. #36 adds
-  `@Service` back alongside the adapter — this mirrors how #32/#33 split the
-  same work for `Team`, just made explicit here because a full-context test
-  now exists to catch the gap.
 - Deletion's effect on future references (the feature's "handled explicitly
   rather than silently broken" acceptance criterion) is moot for now since
   nothing yet references a `Player` by id; revisit once Session/attendance
   (epic #2) exists.
 
+### Persistence and API (issue #36)
+
+- Liquibase `0002_create_player.xml`: `player` table (`id` — `varchar(36)`,
+  since `PlayerId` is a string, not a `TeamId`-style UUID — `team_id`, `name`,
+  `birth_year`, `position`) with a `fk_player_team` foreign key to `team(id)`
+  and an index on `team_id`.
+- `PlayerEntity` / `SpringDataPlayerRepository` / `JpaPlayerRepositoryAdapter`
+  implement `PlayerRepositoryPort` the same way `Team`'s adapter does.
+  `PlayerUseCaseService` now carries `@Service` (see #35's note, now resolved
+  — the port has an adapter to autowire).
+- `PlayerController`: `POST/GET /api/teams/{teamId}/players`,
+  `GET/PATCH/DELETE /api/teams/{teamId}/players/{id}`. Ownership is resolved
+  the same way as `TeamController`, through `CurrentCoachResolver`; the path
+  additionally carries `teamId` since a player has no owner of its own.
+- **No `SecurityConfig` change.** The existing `.requestMatchers("/api/teams/**")`
+  permit-list entry already covers the nested player routes — Spring's `**`
+  segment matches across path segments, not just the one immediately after
+  `/api/teams/`. `PlayerSecurityConfigTest` runs with the real filter chain
+  (unlike the other controller tests, which disable it) to confirm this
+  rather than assume it, so no separate `/api/teams/*/players/**` entry was
+  added.

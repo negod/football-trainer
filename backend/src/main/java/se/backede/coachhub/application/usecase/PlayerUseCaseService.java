@@ -2,6 +2,8 @@ package se.backede.coachhub.application.usecase;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import se.backede.coachhub.application.dto.CreatePlayerRequest;
 import se.backede.coachhub.application.dto.PlayerResponse;
 import se.backede.coachhub.application.dto.UpdatePlayerRequest;
@@ -16,12 +18,7 @@ import se.backede.coachhub.domain.repository.TeamRepositoryPort;
 import se.backede.coachhub.shared.exception.AccessDeniedException;
 import se.backede.coachhub.shared.exception.ResourceNotFoundException;
 
-/**
- * Not yet a Spring bean ({@code @Service}): {@link PlayerRepositoryPort} has
- * no implementation until #36 adds the JPA adapter, and the full-context
- * {@code TeamPersistenceIntegrationTest} would fail to autowire an
- * unimplemented port. #36 adds {@code @Service} back alongside the adapter.
- */
+@Service
 public class PlayerUseCaseService {
 
     private final PlayerRepositoryPort playerRepository;
